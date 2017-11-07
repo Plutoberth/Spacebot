@@ -721,8 +721,4 @@ bot.add_cog(main(bot))
 bot.load_extension("redditcontent")
 bot.load_extension("twittercontent")
 
-f = open("bot_token.txt","r")
-token = f.read()
-f.close()
-
 bot.run(tokens["bot_token"])
