@@ -2,7 +2,7 @@
 
 ### Spacebot is a space-related bot (obviously), that can get everything you need about space. Launch timings, Reddit, RSS, Twitter, and more!
 
-#### The default prefix is ? 
+#### The default prefix is '?'
 
 ## Commands 
 #### ?reddit {subreddit}:
