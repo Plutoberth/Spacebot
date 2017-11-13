@@ -10,7 +10,7 @@ f = open("tokens.json","r")
 tokens = json.loads(f.read())
 f.close()
 
-# Unbuffered
+# Adds error logging to Linux journalctl
 sys.stdout = TextIOWrapper(sys.stdout.detach(),
                            encoding=sys.stdout.encoding,
                            errors="replace",
@@ -23,14 +23,15 @@ twitterapi = twitter.Api(consumer_key=tokens["twitter"]["consumer_key"],
 
 db.connect("localhost", 28015, 'spacebot').repl()
 
+
 class TwitterContent:
     def __init__(self, bot):
         self.bot = bot
 
     async def on_ready(self):
-        self.bot.loop.create_task(self.twitterContent())
+        self.bot.loop.create_task(self.twitter_content())
 
-    async def twitterContent(self):
+    async def twitter_content(self):
         while not self.bot.is_closed:
             try:
                 twittersubs = db.table("subdata").get("twitter").run()

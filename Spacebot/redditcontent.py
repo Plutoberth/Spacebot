@@ -12,7 +12,7 @@ f = open("tokens.json","r")
 tokens = json.loads(f.read())["reddit"]
 f.close()
 
-# Unbuffered
+# Adds error logging to Linux journalctl
 sys.stdout = TextIOWrapper(sys.stdout.detach(),
                            encoding=sys.stdout.encoding,
                            errors="replace",
@@ -20,7 +20,9 @@ sys.stdout = TextIOWrapper(sys.stdout.detach(),
 
 db.connect("localhost", 28015, 'spacebot').repl()
 
+
 class RedditContent:
+
     def __init__(self, bot):
         self.bot = bot
         self.iconurls = {'spacex': 'https://pbs.twimg.com/profile_images/671865418701606912/HECw8AzK.jpg',
@@ -31,9 +33,9 @@ class RedditContent:
                      'esa': 'https://www.uncleninja.com/wp-content/uploads/2016/04/ESA_Logo.png'}
 
     async def on_ready(self):
-        self.bot.loop.create_task(self.redditContent())
+        self.bot.loop.create_task(self.reddit_content())
 
-    async def redditContent(self):
+    async def reddit_content(self):
         while not self.bot.is_closed:
             try:
                 reddit = praw.Reddit(client_id=tokens["client_id"], client_secret=tokens["client_secret"],

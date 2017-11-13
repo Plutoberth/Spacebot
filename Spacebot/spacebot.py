@@ -21,7 +21,7 @@ tokens = json.loads(f.read())
 f.close()
 
 
-# Unbuffered
+# Adds error logging to Linux journalctl
 sys.stdout = TextIOWrapper(sys.stdout.detach(),
                            encoding=sys.stdout.encoding,
                            errors="replace",
@@ -314,7 +314,7 @@ class main:
         # rows : reddit/twitter/twitterlp/redditlp
         # columns : [channel1ID, channel2ID]
 
-        channel_twitter_subs = []
+        channel_rss_subs = []
         completetwitterdb = db.table("subdata").get("twitter").run()
 
         if completetwitterdb == None:
@@ -323,6 +323,7 @@ class main:
         for k, v in completetwitterdb.items():
             if ctx.message.channel.id in v:
                 channel_twitter_subs.append(k)
+
         prefix = getprefix(self.bot, ctx.message)
 
 
@@ -720,5 +721,6 @@ class main:
 bot.add_cog(main(bot))
 bot.load_extension("redditcontent")
 bot.load_extension("twittercontent")
+bot.load_extension("rsscontent")
 
 bot.run(tokens["bot_token"])
