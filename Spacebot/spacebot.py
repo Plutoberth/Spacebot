@@ -13,6 +13,7 @@ import requests
 import json
 from io import TextIOWrapper
 import sys
+import feedparser
 
 
 f = open("tokens.json","r")
@@ -304,26 +305,53 @@ class main:
 
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, aliases=['rss'])
-    async def rssnotifs(self, ctx, subname: str = None):
+    async def rssnotifs(self, ctx, rssLink: str = None):
         await self.bot.say("This is not ready yet :(")
         return
 
         # DB STRUCTURE
         # table : subdata
-        # rows : reddit/twitter/twitterlp/redditlp
+        # rows : rss/rsslp
         # columns : [channel1ID, channel2ID]
 
         channel_rss_subs = []
-        completetwitterdb = db.table("subdata").get("twitter").run()
+        completerssdb = db.table("subdata").get("rss").run()
 
-        if completetwitterdb == None:
-            completetwitterdb = {}
+        if completerssdb == None:
+            completerssdb = {}
 
-        for k, v in completetwitterdb.items():
+        for k, v in completerssdb.items():
             if ctx.message.channel.id in v:
-                channel_twitter_subs.append(k)
+                channel_rss_subs.append(k)
 
         prefix = getprefix(self.bot, ctx.message)
+
+        if not rssLink:
+            if len(channel_rss_subs) > 0 :
+                await self.bot.say(
+                    ":bell: **This channel is subscribed to the following RSS feeds: \n`{}`"
+                    "\n Use `{}rss [RSS feed link] ` to add or remove feeds.**".format(
+                    prefix, "\n".join(channel_twitter_subs)))
+            else:
+                await self.bot.say(
+                    ":no_bell: **This channel isn't subscribed to any RSS feeds.\n"
+                    "Use `{}rss [RSS feed link]` to subscribe to some. "
+                    "subreddits.**")
+            return
+
+        rssLink = rssLink.lower()
+        channelid = ctx.message.channel.id
+
+        #check if the feed exists
+
+        feed = feedparser.parse(rssLink)
+
+        if len(feed['feed']) == 0:
+            return
+
+
+
+
 
 
 
