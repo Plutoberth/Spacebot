@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-import json
 import aiohttp
 import time
 import async_timeout
@@ -365,30 +364,28 @@ class main:
 
         subname = subname.lower()
         channelid = ctx.message.channel.id
-        # Twitter section
-        if subname[0] == "%":
-            subname = subname[1:]
-            try:
-                twitterapi.GetUserTimeline(screen_name=subname, count=1)
-            except twitter.error.TwitterError:
-                await self.bot.say("\U0000274C **The twitter user @{} does not exist.**".format(subname))
-                return
-            try:
-                sublist = db.table("subdata").get("twitter").get_field(subname).run()
-            except (db.ReqlNonExistenceError, KeyError):
-                sublist = []
 
-            if ctx.message.channel.id in sublist:
-                sublist.remove(channelid)
-                await self.bot.say(
-                    ":no_bell: **This channel will no longer be notified of new tweets from `@{}`**".format(subname))
-            else:
-                sublist.append(ctx.message.channel.id)
-                await self.bot.say(":bell: **This channel will be notified of new tweets from `@{}`**".format(subname))
-
-            db.table("subdata").insert({"id": "twitter", subname:sublist}, conflict="update").run()
-
+        try:
+            twitterapi.GetUserTimeline(screen_name=subname, count=1)
+        except twitter.error.TwitterError:
+            await self.bot.say("\U0000274C **The twitter user `@{}` does not exist.**".format(subname))
             return
+        try:
+            sublist = db.table("subdata").get("twitter").get_field(subname).run()
+        except (db.ReqlNonExistenceError, KeyError):
+            sublist = []
+
+        if ctx.message.channel.id in sublist:
+            sublist.remove(channelid)
+            await self.bot.say(
+                ":no_bell: **This channel will no longer be notified of new tweets from `@{}`**".format(subname))
+        else:
+            sublist.append(ctx.message.channel.id)
+            await self.bot.say(":bell: **This channel will be notified of new tweets from `@{}`**".format(subname))
+
+        db.table("subdata").insert({"id": "twitter", subname:sublist}, conflict="update").run()
+
+
 
 
 
