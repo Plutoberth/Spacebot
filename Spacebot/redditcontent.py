@@ -88,7 +88,7 @@ class RedditContent:
 
                     else:
                         # add post link
-                        # fullmessage += "[Post]({})".format(post.shortlink)
+                        fullmessage += "[Post]({})".format(post.shortlink)
                         if not post.thumbnail == "default":
                             format = post.url[-3:]
                             imgformats = ["png", "jpg", "gif"]

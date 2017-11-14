@@ -317,11 +317,11 @@ class main:
         channel_rss_subs = []
         complete_rss_db = db.table("subdata").get("rss").run()
 
-        rss_link = rss_link.lower()
+
         channel_id = ctx.message.channel.id
 
         if complete_rss_db is None:
-            completerssdb = {}
+            complete_rss_db = {}
 
         # Get a list of RSS feeds for that channel
 
@@ -335,8 +335,8 @@ class main:
             if len(channel_rss_subs) > 0 :
                 await self.bot.say(
                     ":bell: **This channel is subscribed to the following RSS feeds: \n`{}`"
-                    "\n Use `{}rss [RSS feed link] ` to add or remove feeds.**".format(
-                    prefix, "\n".join(channel_rss_subs)))
+                    "\n\n Use `{}rss [RSS feed link] ` to add or remove feeds.**".format(
+                    "\n".join(channel_rss_subs), prefix))
             else:
                 await self.bot.say(
                     ":no_bell: **This channel isn't subscribed to any RSS feeds.\n"
@@ -347,9 +347,10 @@ class main:
         # Check if the RSS Feed exists
 
         feed = feedparser.parse(rss_link)
+        rss_link = rss_link.lower()
 
         if len(feed['feed']) == 0:
-            self.bot.say("❌ **This [feed]({}) doesn't exist, or it is unreachable.**".format(rss_link))
+            await self.bot.say("❌ **This feed doesn't exist, or it is unreachable.**")
             return
 
         try:
@@ -395,7 +396,7 @@ class main:
                 await self.bot.say(
                     ":bell: **This channel receives Twitter notifications from: `{}.`"
                     "\n\n Use `{}twitter [Twitter Username]` to add more.**".format(
-                    prefix, ", @".join(channel_twitter_subs)))
+                    ", @".join(channel_twitter_subs), prefix))
             else:
                 await self.bot.say(
                     ":no_bell: **This channel doesn't receive notifications from any subreddits.\n"
@@ -759,6 +760,6 @@ class main:
 bot.add_cog(main(bot))
 bot.load_extension("redditcontent")
 bot.load_extension("twittercontent")
-bot.load_extension("rsscontent")
+#bot.load_extension("rsscontent")
 
 bot.run(tokens["bot_token"])

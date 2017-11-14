@@ -51,6 +51,11 @@ class TwitterContent:
                 #print(sub)
                 try:
                     lasttweet = twitterapi.GetUserTimeline(screen_name=sub, count=1, include_rts=False, exclude_replies=True)[0]
+
+                    image = False
+                    if len(lasttweet.media) > 0:
+                        image = True
+
                 except (IndexError, twitter.error.TwitterError):
                     continue
                 if sub in twitterlp:
@@ -65,6 +70,9 @@ class TwitterContent:
                                                                                                     sub,
                                                                                                     lasttweet.id_str),
                     title="New tweet by {}:".format(lasttweet.user.name), color=discord.Color.blue())
+                if image:
+
+                    em.set_image(url=lasttweet.media[0].media_url)
 
                 for channel in channels:
                     try:
@@ -72,7 +80,7 @@ class TwitterContent:
                     except discord.errors.InvalidArgument:
                         pass
 
-            await asyncio.sleep(60)
+            await asyncio.sleep(10)
 
 
 def setup(bot):
