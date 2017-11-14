@@ -23,7 +23,7 @@ class RSSContent:
 
     async def on_ready(self):
 
-        self.bot.loop.create_task(self.RSSContent())
+        self.bot.loop.create_task(self.rss_content())
 
     async def rss_content(self):
         while not self.bot.is_closed:

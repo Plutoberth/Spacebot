@@ -14,6 +14,8 @@ import json
 from io import TextIOWrapper
 import sys
 import feedparser
+sys.stdout.flush()
+
 
 
 f = open("tokens.json","r")
@@ -305,9 +307,7 @@ class main:
 
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, aliases=['rss'])
-    async def rssnotifs(self, ctx, rssLink: str = None):
-        await self.bot.say("This is not ready yet :(")
-        return
+    async def rssnotifs(self, ctx, rss_link: str = None):
 
         # DB STRUCTURE
         # table : subdata
@@ -315,23 +315,28 @@ class main:
         # columns : [channel1ID, channel2ID]
 
         channel_rss_subs = []
-        completerssdb = db.table("subdata").get("rss").run()
+        complete_rss_db = db.table("subdata").get("rss").run()
 
-        if completerssdb == None:
+        rss_link = rss_link.lower()
+        channel_id = ctx.message.channel.id
+
+        if complete_rss_db is None:
             completerssdb = {}
 
-        for k, v in completerssdb.items():
+        # Get a list of RSS feeds for that channel
+
+        for k, v in complete_rss_db.items():
             if ctx.message.channel.id in v:
                 channel_rss_subs.append(k)
 
         prefix = getprefix(self.bot, ctx.message)
 
-        if not rssLink:
+        if not rss_link:
             if len(channel_rss_subs) > 0 :
                 await self.bot.say(
                     ":bell: **This channel is subscribed to the following RSS feeds: \n`{}`"
                     "\n Use `{}rss [RSS feed link] ` to add or remove feeds.**".format(
-                    prefix, "\n".join(channel_twitter_subs)))
+                    prefix, "\n".join(channel_rss_subs)))
             else:
                 await self.bot.say(
                     ":no_bell: **This channel isn't subscribed to any RSS feeds.\n"
@@ -339,20 +344,28 @@ class main:
                     "subreddits.**")
             return
 
-        rssLink = rssLink.lower()
-        channelid = ctx.message.channel.id
+        # Check if the RSS Feed exists
 
-        #check if the feed exists
-
-        feed = feedparser.parse(rssLink)
+        feed = feedparser.parse(rss_link)
 
         if len(feed['feed']) == 0:
+            self.bot.say("❌ **This [feed]({}) doesn't exist, or it is unreachable.**".format(rss_link))
             return
 
+        try:
+            sub_list = db.table("subdata").get("rss").get_field(rss_link).run()
+        except (db.ReqlNonExistenceError, KeyError):
+            sub_list = []
 
+        if channel_id in sub_list:
+            sub_list.remove(channel_id)
+            await self.bot.say(
+                ":no_bell: **This channel will no longer be notified of new posts from `{}`**".format(rss_link))
+        else:
+            sub_list.append(channel_id)
+            await self.bot.say(":bell: **This channel will be notified of new posts from `{}`**".format(rss_link))
 
-
-
+        db.table("subdata").insert({"id": "rss", rss_link:sub_list}, conflict="update").run()
 
 
 
