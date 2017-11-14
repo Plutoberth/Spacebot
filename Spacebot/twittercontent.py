@@ -74,7 +74,6 @@ class TwitterContent:
                                                                                                     lasttweet.id_str),
                     title="New tweet by {}:".format(lasttweet.user.name), color=discord.Color.blue())
                 if image:
-                    print("image activated")
                     em.set_image(url=lasttweet.media[0].media_url)
 
                 for channel in channels:
@@ -83,7 +82,7 @@ class TwitterContent:
                     except discord.errors.InvalidArgument:
                         pass
 
-            await asyncio.sleep(5)
+            await asyncio.sleep(60)
 
 
 def setup(bot):
