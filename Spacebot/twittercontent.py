@@ -53,7 +53,7 @@ class TwitterContent:
                     lasttweet = twitterapi.GetUserTimeline(screen_name=sub, count=1, include_rts=False, exclude_replies=True)[0]
 
                     image = False
-                    if len(lasttweet.media) > 0:
+                    if lasttweet.media is not None:
                         image = True
 
                 except (IndexError, twitter.error.TwitterError):
