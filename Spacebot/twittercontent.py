@@ -6,7 +6,7 @@ import sys
 import json
 import twitter
 
-f = open("tokens.json","r")
+f = open("tokens.json", "r")
 tokens = json.loads(f.read())
 f.close()
 
@@ -19,7 +19,8 @@ sys.stdout = TextIOWrapper(sys.stdout.detach(),
 twitterapi = twitter.Api(consumer_key=tokens["twitter"]["consumer_key"],
                          consumer_secret=tokens["twitter"]["consumer_secret"],
                          access_token_key=tokens["twitter"]["access_token_key"],
-                         access_token_secret=tokens["twitter"]["access_token_secret"])
+                         access_token_secret=tokens["twitter"]["access_token_secret"],
+                         tweet_mode='extended')
 
 db.connect("localhost", 28015, 'spacebot').repl()
 
@@ -53,11 +54,13 @@ class TwitterContent:
                     lasttweet = twitterapi.GetUserTimeline(screen_name=sub, count=1, include_rts=False, exclude_replies=True)[0]
 
                     image = False
+
                     if lasttweet.media is not None:
                         image = True
 
                 except (IndexError, twitter.error.TwitterError):
                     continue
+
                 if sub in twitterlp:
                     if lasttweet.text == twitterlp[sub]:
                         continue
@@ -66,12 +69,12 @@ class TwitterContent:
 
 
                 em = discord.Embed(
-                    description="**{}** \n\n [Tweet Link](https://twitter.com/{}/status/{})".format(lasttweet.text,
+                    description="**{}** \n\n [Tweet Link](https://twitter.com/{}/status/{})".format(lasttweet.full_text,
                                                                                                     sub,
                                                                                                     lasttweet.id_str),
                     title="New tweet by {}:".format(lasttweet.user.name), color=discord.Color.blue())
                 if image:
-
+                    print("image activated")
                     em.set_image(url=lasttweet.media[0].media_url)
 
                 for channel in channels:
@@ -80,7 +83,7 @@ class TwitterContent:
                     except discord.errors.InvalidArgument:
                         pass
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(5)
 
 
 def setup(bot):
