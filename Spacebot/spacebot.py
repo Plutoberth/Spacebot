@@ -758,7 +758,7 @@ class main:
 
 
 bot.add_cog(main(bot))
-bot.load_extension("redditcontent")
+#bot.load_extension("redditcontent")
 bot.load_extension("twittercontent")
 #bot.load_extension("rsscontent")
 

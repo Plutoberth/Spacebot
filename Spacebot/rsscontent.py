@@ -29,6 +29,8 @@ class RSSContent:
         while not self.bot.is_closed:
             pass
 
+
+
 def setup(bot):
     bot.add_cog(RSSContent(bot))
 
