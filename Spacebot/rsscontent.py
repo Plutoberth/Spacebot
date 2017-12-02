@@ -27,7 +27,16 @@ class RSSContent:
 
     async def rss_content(self):
         while not self.bot.is_closed:
+            complete_rss_db = db.table("subdata").get("rss").run()
+
+            await asyncio.sleep(60)
+
             pass
+
+
+
+
+
 
 
 

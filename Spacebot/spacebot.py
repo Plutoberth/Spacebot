@@ -180,6 +180,7 @@ class main:
     async def invite(self):
         em = discord.Embed(description="**Spacebot** by Cakeofdestiny.\n"
                                        "[Invite Link](https://discordapp.com/oauth2/authorize?client_id=291185373860855808&scope=bot&permissions=27648)\n"
+                                       "[Github](https://github.com/Cakeofdestiny/Spacebot)\n"
                                        "[Official Server (kinda)](https://discord.gg/dHdbpwV)",
                            color=discord.Color.blue())
         print(self.bot.user.avatar_url)
@@ -250,12 +251,22 @@ class main:
     @commands.command(pass_context=True)
     async def purge(self, ctx, *, amount: str = None):
         """Purge a certain amount of messages from the chat"""
-        if not amount.isdigit():
+        if not amount:
+            await self.bot.say("Usage : *{}purge [messages]* \n Messages has to be below 100 (except easter eggs).".format(getprefix(self.bot,ctx.message)))
+            return
+        if amount.isdigit():
+            if int(amount) > 100:
+                await self.bot.say(
+                    "Usage : *{}purge [messages]* \n Messages has to be below 100 (except easter eggs).".format(
+                        getprefix(self.bot, ctx.message)))
+                return
+        else:
+            await self.bot.delete_message(ctx.message)
             await self.bot.say("**I WILL DESTROY {}** :boom: :boom:".format(amount.upper()))
             return
+
         amount = int(amount)
-        if not amount or amount > 100:
-            return
+
         await self.bot.purge_from(ctx.message.channel, limit=amount)
 
     @commands.command(pass_context=True)
@@ -559,14 +570,14 @@ class main:
 
     @commands.command(pass_context=True)
     async def launchnotify(self, ctx, *, agency: str = None):
-        if "jamie" in agency.lower():
-            await self.bot.say("no")
-            return
 
         # Get agencies from rethink db -- add filter
         ulndata = db.table("launchnotify").get(ctx.message.server.id).run()
-        useragencies = [ulndata[k]["data"]["name"] for k, v in ulndata.items() if ctx.message.author.id in v]
-        print(useragencies)
+        if not ulndata:
+            ulndata = {}
+            useragencies = []
+        else:
+            useragencies = [ulndata[k]["data"]["name"] for k, v in ulndata.items() if ctx.message.author.id in v]
 
         if not agency:
             if len(useragencies) > 0:
@@ -758,7 +769,7 @@ class main:
 
 
 bot.add_cog(main(bot))
-#bot.load_extension("redditcontent")
+bot.load_extension("redditcontent")
 bot.load_extension("twittercontent")
 #bot.load_extension("rsscontent")
 

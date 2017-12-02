@@ -41,11 +41,11 @@ class RedditContent:
                 reddit = praw.Reddit(client_id=tokens["client_id"], client_secret=tokens["client_secret"],
                                      user_agent='PythonLinux:Spacebot:v1.2.3 (by /u/Cakeofdestiny)')
 
-                #while not self.bot.is_closed:
+
                 subdb = db.table("subdata").get("reddit").run()
 
                 redditlp = db.table("subdata").get("redditlp").run()
-                #print("Subdb {}\n\nRedditlp {}".format(subdb,redditlp))
+
 
                 if not redditlp:
                     redditlp = {}
@@ -55,7 +55,11 @@ class RedditContent:
                     if s == "id":
                         continue
                     #if sub has zero members delete it
-                    if len(v) == 0:
+                    if v is not None:
+                        if len(v) == 0:
+                            subdb.pop(s, None)
+                            continue
+                    else:
                         subdb.pop(s, None)
                         continue
                     #if sub not in lp set lp 0
@@ -63,6 +67,9 @@ class RedditContent:
                         redditlp[s] = 1500000000.0
 
                     post = reddit.subreddit(s).new(limit=1).next()
+                    if not post:
+                        subdb.pop(s, None)
+                        continue
                     #if post is older or the same than the lp continue
                     if redditlp[s] >= post.created_utc:
                         continue
@@ -104,14 +111,14 @@ class RedditContent:
                                   icon_url=self.iconurls.get(s, "https://vignette.wikia.nocookie.net/theamazingworldofgumball/images/e/ec/Reddit_Logo.png/revision/latest?cb=20170105232917"))
 
                     for channel in v:
-                        #print(str(len(fullmessage)) + " channel:" + channel + "\n", flush=True)
+
                         try:
-                            channel = self.bot.get_channel(channel)
-                            if not channel:
+                            channelObject = self.bot.get_channel(channel)
+                            if not channelObject:
                                 subdb[s] = v.remove(channel)
                             else:
-                                await self.bot.send_message(channel, embed=em)
-                        except (discord.errors.HTTPException, discord.errors.InvalidArgument, discord.errors.Forbidden) as e:
+                                await self.bot.send_message(channelObject, embed=em)
+                        except Exception as e:
                             print(
                                 "{}! Details below for debugging: \n\n channel: {}\n post: {}\n".format(
                                 e, channel, post.shortlink))
@@ -120,7 +127,6 @@ class RedditContent:
                 subdb["id"] = "reddit"
 
                 db.table("subdata").insert(subdb, conflict="replace").run()
-                #print("Redlp:{}".format(redditlp))
                 db.table("subdata").insert(redditlp, conflict="replace").run()
                 await asyncio.sleep(60)
             except Exception as e:
