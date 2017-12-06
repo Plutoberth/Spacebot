@@ -5,7 +5,7 @@ import json
 import sys
 from io import TextIOWrapper
 
-f = open("tokens.json","r")
+f = open("tokens.json", "r")
 tokens = json.loads(f.read())
 f.close()
 

@@ -26,11 +26,11 @@ class RedditContent:
     def __init__(self, bot):
         self.bot = bot
         self.iconurls = {'spacex': 'https://pbs.twimg.com/profile_images/671865418701606912/HECw8AzK.jpg',
-                     'blueorigin': 'https://yt3.ggpht.com/-7t1ah-4Rkmg/AAAAAAAAAAI/AAAAAAAAAAA/oCypeGgwHNA/s900-c-k-no-mo-rj-c0xffffff/photo.jpg',
-                     'ula': 'https://pbs.twimg.com/profile_images/563827857814605824/zvKDJUvj_400x400.jpeg',
-                     'nasa': 'http://i.imgur.com/tcjKucp.png',
-                     'spacexlounge': 'https://pbs.twimg.com/profile_images/671865418701606912/HECw8AzK.jpg',
-                     'esa': 'https://www.uncleninja.com/wp-content/uploads/2016/04/ESA_Logo.png'}
+                         'blueorigin': 'https://yt3.ggpht.com/-7t1ah-4Rkmg/AAAAAAAAAAI/AAAAAAAAAAA/oCypeGgwHNA/s900-c-k-no-mo-rj-c0xffffff/photo.jpg',
+                         'ula': 'https://pbs.twimg.com/profile_images/563827857814605824/zvKDJUvj_400x400.jpeg',
+                         'nasa': 'http://i.imgur.com/tcjKucp.png',
+                         'spacexlounge': 'https://pbs.twimg.com/profile_images/671865418701606912/HECw8AzK.jpg',
+                         'esa': 'https://www.uncleninja.com/wp-content/uploads/2016/04/ESA_Logo.png'}
 
     async def on_ready(self):
         self.bot.loop.create_task(self.reddit_content())
@@ -65,8 +65,10 @@ class RedditContent:
                     #if sub not in lp set lp 0
                     if s not in redditlp:
                         redditlp[s] = 1500000000.0
-
-                    post = reddit.subreddit(s).new(limit=1).next()
+                    try:
+                        post = reddit.subreddit(s).new(limit=1).next()
+                    except asyncio.TimeoutError:
+                        continue
                     if not post:
                         subdb.pop(s, None)
                         continue

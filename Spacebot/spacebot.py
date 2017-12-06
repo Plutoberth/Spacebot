@@ -74,8 +74,10 @@ class main:
         print(self.bot.user.id, flush=True)
         print(discord.utils.oauth_url(self.bot.user.id), flush=True)
         print('------', flush=True)
-
-        self.llanswers = await self.fetch("https://launchlibrary.net/1.2/launch/next/10")
+        try:
+            self.llanswers = await self.fetch("https://launchlibrary.net/1.2/launch/next/10")
+        except asyncio.TimeoutError:
+            print("llanswers timeout")
 
         self.bot.loop.create_task(self.updateservercount())
 
@@ -405,7 +407,7 @@ class main:
         if not subname:
             if len(channel_twitter_subs) > 0 :
                 await self.bot.say(
-                    ":bell: **This channel receives Twitter notifications from: `{}.`"
+                    ":bell: **This channel receives Twitter notifications from: `@{}.`"
                     "\n\n Use `{}twitter [Twitter Username]` to add more.**".format(
                     ", @".join(channel_twitter_subs), prefix))
             else:
@@ -646,21 +648,21 @@ class main:
             await self.bot.say(":bell: **You will be `@mentioned` on launches and special events.**")
 
     @commands.command(pass_context=True, aliases=['nl'])
-    async def nextlaunch(self, ctx, new=1):
+    async def nextlaunch(self, ctx):
         """Get information on the next launch."""
-        xpathquery = []
 
         if time.time() - self.nl > 900:
-            async with self.session.get("https://launchlibrary.net/1.2/launch/next/10") as resp:
-                nlinfo = (await resp.json())["launches"]
+            try:
+                async with self.session.get("https://launchlibrary.net/1.2/launch/next/10") as resp:
+                    nlinfo = (await resp.json())["launches"]
+
+            except asyncio.TimeoutError:
+                print("nlinfo timeout")
 
             for r in nlinfo:
-                if (r["wsstamp"] == 0):
+                if r["wsstamp"] == 0:
                     continue
 
-                date = datetime.fromtimestamp(r["wsstamp"])
-
-                month = dict((v, k) for k, v in self.mnames.items())[date.month]
                 ttime = self.gettimeto(r["wsstamp"])
 
                 if r["status"] == 1:
@@ -672,9 +674,6 @@ class main:
 
         else:
             nldata = self.nldata
-            date = datetime.fromtimestamp(nldata["wsstamp"])
-
-            month = dict((v, k) for k, v in self.mnames.items())[date.month]
             ttime = self.gettimeto(nldata["wsstamp"])
 
         fullmessage = "Vehicle: __**{0[0]}**__| Payload: __**{0[1]}**__".format(nldata["name"].split('|'))
@@ -699,14 +698,18 @@ class main:
                       icon_url="https://images-ext-1.discordapp.net/eyJ1cmwiOiJodHRwOi8vaS5pbWd1ci5jb20vVk1kRGo2Yy5wbmcifQ.CmIVz3NKC91ria81ae45bo4yEiA")
         await self.bot.send_message(ctx.message.channel, embed=em)
 
-    @commands.command(pass_context=True, aliases=['ll', 'launchlist'])
-    async def listlaunches(self, ctx):
+    @commands.command(aliases=['ll', 'launchlist'])
+    async def listlaunches(self):
         """Get a list of launches"""
-        xpathquery = []
-        actnumber = 0
+
         if time.time() - self.ll > 1800:
-            async with self.session.get("https://launchlibrary.net/1.2/launch/next/10") as resp:
-                lldata = (await resp.json())["launches"]
+            try:
+                async with self.session.get("https://launchlibrary.net/1.2/launch/next/10") as resp:
+                    lldata = (await resp.json())["launches"]
+
+            except asyncio.TimeoutError:
+                print("llinfo timeout")
+
 
             self.lldata = lldata
             self.ll = time.time()

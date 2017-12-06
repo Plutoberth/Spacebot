@@ -34,22 +34,19 @@ class TwitterContent:
 
     async def twitter_content(self):
         while not self.bot.is_closed:
+            twittersubs = {}
             try:
                 twittersubs = db.table("subdata").get("twitter").run()
             except db.ReqlNonExistenceError:
                 print("Fatal error, rethinkdb table inaccessible.")
                 pass
-
+            twitterlp = {}
             twitterlp = db.table("subdata").get("twitterlp").run()
-            if not twittersubs:
-                twittersubs = {}
-            if not twitterlp:
-                twitterlp = {}
 
             for sub, channels in twittersubs.items():
                 if sub == "id":
                     continue
-                #print(sub)
+                # print(sub)
                 try:
                     lasttweet = twitterapi.GetUserTimeline(screen_name=sub, count=1, include_rts=False, exclude_replies=True)[0]
 
@@ -58,7 +55,7 @@ class TwitterContent:
                     if lasttweet.media is not None:
                         image = True
 
-                except (IndexError, twitter.error.TwitterError):
+                except (IndexError, twitter.error.TwitterError, asyncio.TimeoutError):
                     continue
 
                 if sub in twitterlp:
@@ -66,7 +63,6 @@ class TwitterContent:
                         continue
 
                 db.table("subdata").insert({"id": "twitterlp", sub: lasttweet.text}, conflict="update").run()
-
 
                 em = discord.Embed(
                     description="**{}** \n\n [Tweet Link](https://twitter.com/{}/status/{})".format(lasttweet.full_text,
