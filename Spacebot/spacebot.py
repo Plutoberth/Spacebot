@@ -40,8 +40,12 @@ db.connect("localhost", 28015, 'spacebot').repl()
 def getprefix(bot, message):
     try:
         return db.table("serverdata").get(message.server.id).get_field("prefix").run()
-    except db.ReqlNonExistenceError:
+    except (db.ReqlNonExistenceError,AttributeError):
         return '?'
+
+SHORTCUTS = {"VirginGalactic": "VG", "Roscosmos": "RFSA", "SpaceX": "SpX", "OrbitalATK": "ATK",
+             "BlueOrigin": "BO", "RocketLab": "RL", "CloudAerospace": "CA", "VectorSpaceSystems": "Vector",
+             "SierraNevadaCorp" : "SNC", "CopenhagenSuborbitals" : "Copsub", "StratolaunchSystems": "Stratolaunch"}
 
 
 description = '''A bot made by @Cakeofdestiny for space-related info, launch timings, tweets, and reddit posts.'''
@@ -67,6 +71,8 @@ class main:
                        "November": 11, "December": 12}
 
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
+
+
 
     async def on_ready(self):
         print('Logged in as', flush=True)
@@ -560,15 +566,20 @@ class main:
 
         await self.bot.say("Pastebin data here: {}".format(r.text))
 
-    @commands.command(pass_context=True, aliases=['amos'])
-    async def amos6(self, ctx):
+    @commands.command(aliases=['amos'])
+    async def amos6(self):
         """rip"""
         await self.bot.say("Rip :( http://pop.h-cdn.co/assets/16/35/1472752799-ezgifcom-optimize-2.gif")
 
-    @commands.command(pass_context=True)
-    async def sfr2(self, ctx):
+    @commands.command()
+    async def sfr2(self):
         """rip2"""
         await self.bot.say("Rip2 :( https://i.imgur.com/O86IDwm.gifv")
+
+    @commands.command()
+    async def tank(self):
+        """rip3"""
+        await self.bot.say("rip3 :( https://i.imgur.com/c4cEb6U.gifv")
 
     @commands.command(pass_context=True)
     async def launchnotify(self, ctx, *, agency: str = None):
@@ -629,23 +640,96 @@ class main:
 
     @commands.command(aliases=['falconheavy','fh'])
     async def whenisfalconheavylaunching(self):
-        await self.bot.say("In **6 months.**")
+        await self.bot.say("In **6 weeks.**")
+
+
+    async def toggleNotify(self, notifyRole, member):
+        if notifyRole in member.roles:
+            await self.bot.remove_roles(member, notifyRole)
+            return False
+        else:
+            await self.bot.add_roles(member, notifyRole)
+            return True
+
 
     @commands.command(pass_context=True)
-    async def notifyme(self, ctx):
+    async def notifyme(self, ctx, *, agencyListRaw:str = "Launch"):
         if int(ctx.message.server.id) != 316186751565824001:
-           return
+            return
+        agencyList = agencyListRaw.split(" ")
+        # Lowering the cases
 
-        LNRole = [r for r in ctx.message.server.roles if r.name == "LaunchNotify"][0]
+        agencyList = [r.lower() for r in agencyList]
+
+        agency_roles = []
+        #print(agencyList)
+        reverseShortcuts = {v.lower():k.lower() for k, v in SHORTCUTS.items()}
+        #print(reverseShortcuts)
+        for r in ctx.message.server.roles:
+            for j in agencyList:
+
+
+                if j == r.name.lower()[:-7] or reverseShortcuts.get(j, "invalid") == r.name.lower()[:-7]:
+                    agency_roles.append(r)
+
+
+        #print([r.name for r in agency_roles])
+
+        # No input
+        if len(agency_roles) == 0:
+            # Getting role list
+            roleList = [r.name for r in ctx.message.server.roles if "-notify" in r.name.lower()]
+            # Removing "-notify"s
+            roleList = [r[:-7] for r in roleList]
+            # Removing All
+            roleList = [r for r in roleList if r != "All" and r != "Launch"]
+            # Handling shortcuts
+            roleList = [(r + " - **" + SHORTCUTS.get(r, r)) + "**" for r in roleList]
+
+            await self.bot.say(":information_source: **This agency does not exist. \n Usage: `{}notifyme [agency], [agency], [agency]...`\n __Available agencies__**: "
+                               "\n **All - All launch updates and agency updates.**"
+                               "\n **Launch - All launch updates.**\n"
+                               "\n*{}* "
+                               "\n `lowercase` works too."
+                               .format(getprefix(bot, ctx.message), "\n".join(roleList)))
+            return
+
         member = ctx.message.author
+        added_roles = []
+        removed_roles = []
 
-        if LNRole in member.roles:
-            await self.bot.remove_roles(member, LNRole)
-            await self.bot.say(":no_bell: **You will no longer be `@mentioned` on launches and special events.**")
+        try:
+            for r in agency_roles:
+                #Checks if it has been added or removed
+                toggle =  await self.toggleNotify(r, member)
+                if toggle:
+                    added_roles.append(r.name[:-7])
+                else:
+                    removed_roles.append(r.name[:-7])
 
-        else:
-            await self.bot.add_roles(member, LNRole)
-            await self.bot.say(":bell: **You will be `@mentioned` on launches and special events.**")
+        except discord.Forbidden:
+            await self.bot.say(":x: I cannot manage roles.")
+            return
+
+
+        message = ""
+        if len(added_roles) > 0:
+            if len(added_roles) == 1 and added_roles[0] == "Launch":
+                message += ":bell: You will be `@mentioned on launches.` \nYou can sign up for more frequent and diverse updates using `.notifyme all`, or for updates for specific agencies only - use `.notifyme ?` to display full list.**\n"
+            else:
+                message += ":bell: **You will be `@mentioned` on launches, launch updates, news and events related to `{}`.**\n".format(", ".join(added_roles))
+
+        if len(removed_roles) > 0:
+            if len(removed_roles) == 1 and removed_roles[0] == "Launch":
+                message += ":no_bell: **You will no longer be `@mentioned` on launches or launch updates.**\n"
+            else:
+                message += ":no_bell: **You will no longer be `@mentioned` on launches, launch updates, news and events related to `{}`.**\n".format(", ".join(removed_roles))
+
+        if len(removed_roles) + len(added_roles) < len(agencyList):
+            removed =  len(agencyList) - (len(removed_roles) + len(added_roles))
+            message += "*{} invalid roles have been omitted.*".format(removed)
+
+        await self.bot.say(message)
 
     @commands.command(pass_context=True, aliases=['nl'])
     async def nextlaunch(self, ctx):
@@ -691,7 +775,7 @@ class main:
         fullmessage += " {} hours, and {} minutes.**".format(ttime["hours"], ttime["minutes"])
 
         if int(ctx.message.server.id) == 316186751565824001:
-            fullmessage += "\n\n**To be notified on launches and special events, use the command `.notifyme`.**"
+            fullmessage += "\n\n**To be notified on launches and special events, use the command `.notifyme`**"
 
         em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
         em.set_author(name="Next launch:",
@@ -726,7 +810,9 @@ class main:
             fullmessage += "Vehicle: __**{0[0]}**__| Payload: __**{0[1]}**__".format(launch["name"].split('|'))
 
             ws = launch["windowstart"][:-7]
-            ws = ws[0:ws.index(str(datetime.now().year))] + ws[-5:] + " UTC"
+            #ws now: December 30, 2017 00:00
+            ws = ws[0:ws.index(',') + 2] + ws[-5:] + " UTC"
+            #ws now December 30, 00:00 UTC
 
             fullmessage += " | Time: {}\n".format(ws)
 

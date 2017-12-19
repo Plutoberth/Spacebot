@@ -75,7 +75,8 @@ class TwitterContent:
                 for channel in channels:
                     try:
                         await self.bot.send_message(self.bot.get_channel(channel), embed=em)
-                    except discord.errors.InvalidArgument:
+                    except Exception as e:
+                        print("Error in twittercontent! e: {}".format(e))
                         pass
 
             await asyncio.sleep(60)

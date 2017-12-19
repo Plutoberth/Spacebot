@@ -1,7 +1,5 @@
 import rethinkdb as db
 import discord
-import time
-import async_timeout
 import asyncio
 from io import TextIOWrapper
 import sys
@@ -41,7 +39,6 @@ class RedditContent:
                 reddit = praw.Reddit(client_id=tokens["client_id"], client_secret=tokens["client_secret"],
                                      user_agent='PythonLinux:Spacebot:v1.2.3 (by /u/Cakeofdestiny)')
 
-
                 subdb = db.table("subdata").get("reddit").run()
 
                 redditlp = db.table("subdata").get("redditlp").run()
@@ -50,11 +47,11 @@ class RedditContent:
                 if not redditlp:
                     redditlp = {}
 
-                    #loop through all subs
+                # loop through all subs
                 for s, v in dict(subdb).items():
                     if s == "id":
                         continue
-                    #if sub has zero members delete it
+                    # if sub has zero members delete it
                     if v is not None:
                         if len(v) == 0:
                             subdb.pop(s, None)
@@ -62,12 +59,14 @@ class RedditContent:
                     else:
                         subdb.pop(s, None)
                         continue
-                    #if sub not in lp set lp 0
+                    # if sub not in lp set lp 0
                     if s not in redditlp:
                         redditlp[s] = 1500000000.0
                     try:
                         post = reddit.subreddit(s).new(limit=1).next()
-                    except asyncio.TimeoutError:
+                    except Exception as e:
+                        print("exception in getting post! e: {} \n s: {}".format(e, s))
+                        asyncio.sleep(30)
                         continue
                     if not post:
                         subdb.pop(s, None)
@@ -90,7 +89,6 @@ class RedditContent:
                     #check if it's a self post
                     if post.is_self:
                         if len(post.selftext) > 1200:
-                            selftext = post.selftext[0:1200]
                             fullmessage += "\n{}\n [More...]({})".format(post.selftext, post.shortlink)
                         else:
                             fullmessage += "\n{}".format(post.selftext)
@@ -99,9 +97,9 @@ class RedditContent:
                         # add post link
                         fullmessage += "[Post]({})".format(post.shortlink)
                         if not post.thumbnail == "default":
-                            format = post.url[-3:]
+                            redditformat = post.url[-3:]
                             imgformats = ["png", "jpg", "gif"]
-                            if format in imgformats:
+                            if redditformat in imgformats:
                                 em.set_image(url=post.url)
                             else:
                                 em.set_thumbnail(url=post.thumbnail)
@@ -116,15 +114,23 @@ class RedditContent:
 
                         try:
                             channelObject = self.bot.get_channel(channel)
-                            if not channelObject:
-                                subdb[s] = v.remove(channel)
-                            else:
-                                await self.bot.send_message(channelObject, embed=em)
                         except Exception as e:
                             print(
-                                "{}! Details below for debugging: \n\n channel: {}\n post: {}\n".format(
-                                e, channel, post.shortlink))
-
+                                "reddit get channel, exception {}! Details below for debugging: \n\n channel: {}\n post: {}\n".format(
+                                    e, channel, post.shortlink))
+                            subdb[s] = v.remove(channel)
+                            continue
+                        if not channelObject:
+                            subdb[s] = v.remove(channel)
+                        else:
+                            try:
+                                await self.bot.send_message(channelObject, embed=em)
+                            except Exception as e:
+                                print(
+                                    "reddit post embed, exception {}! Details below for debugging: \n\n channel: {}\n post: {}\n".format(
+                                        e, channel, post.shortlink))
+                                continue
+                       
                 redditlp["id"] = "redditlp"
                 subdb["id"] = "reddit"
 
@@ -132,7 +138,7 @@ class RedditContent:
                 db.table("subdata").insert(redditlp, conflict="replace").run()
                 await asyncio.sleep(60)
             except Exception as e:
-                print(e)
+                print("exception in the entire reddit loop! e: {}".format(e))
 
 def setup(bot):
     bot.add_cog(RedditContent(bot))
