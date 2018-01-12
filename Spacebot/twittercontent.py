@@ -86,7 +86,9 @@ class TwitterContent:
                         channels.remove(channel)
                         continue
                     # If we do, we check if we can send messages.
-                    if not self.bot.user.permissions_in(channel).send_messages:
+                    bot_user = self.bot.user
+                    bot_member = channel.server.get_member(bot_user.id)
+                    if not bot_member.permissions_in(channel).send_messages:
                         channels.remove(channel)
                         continue
                     try:
