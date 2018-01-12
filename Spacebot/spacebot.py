@@ -306,7 +306,7 @@ class main:
         # If it exists, and the user did not enter one, reply with the message.
         if message is None:
             await self.bot.say(
-                ":information_source: **The welcome message for this server is: {0} \n\n To change it, "
+                ":information_source: **The welcome message for this server is: `{0}` \n\n To change it, "
                 "use {1}wm [message]"
                 "\n Curly Brackets `{2}` in your message will be replaced with a mention of the user."
                 "\n Type `{1}wm clear`** ".format(wmessage[1], prefix, '{}'))
@@ -686,7 +686,7 @@ class main:
             # Handling shortcuts
             roleList = [(r + " - **" + SHORTCUTS.get(r, r)) + "**" for r in roleList]
 
-            await self.bot.say(":information_source: **This agency does not exist. \n Usage: `{}notifyme [agency], [agency], [agency]...`\n __Available agencies__**: "
+            await self.bot.say(":information_source: **This agency does not exist. \n Usage: `{}notifyme [agency] [agency] [agency]...`\n __Available agencies__**: "
                                "\n **All - All launch updates and agency updates.**"
                                "\n **Launch - All launch updates.**\n"
                                "\n*{}* "
@@ -773,6 +773,11 @@ class main:
             fullmessage += "**In 1 day,"
 
         fullmessage += " {} hours, and {} minutes.**".format(ttime["hours"], ttime["minutes"])
+
+        # We check if there is an available live stream.
+        if (len(nldata["vidURLs"])>0):
+            vidurl = nldata["vidURLs"][0]
+            fullmessage += "\n**[Livestream available!]({})**".format(vidurl)
 
         if int(ctx.message.server.id) == 316186751565824001:
             fullmessage += "\n\n**To be notified on launches and special events, use the command `.notifyme`**"
