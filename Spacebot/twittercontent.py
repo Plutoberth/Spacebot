@@ -28,6 +28,7 @@ db.connect("localhost", 28015, 'spacebot').repl()
 class TwitterContent:
     def __init__(self, bot):
         self.bot = bot
+        self.twitter_icon = "http://icons.iconarchive.com/icons/uiconstock/socialmedia/512/Twitter-icon.png"
 
     async def on_ready(self):
         self.bot.loop.create_task(self.twitter_content())
@@ -70,8 +71,8 @@ class TwitterContent:
 
                 if sub in twitterlp:
                     if lasttweet.full_text == twitterlp[sub]:
-                        #print("lasttweet: {} twitterlp: {}".format(lasttweet.full_text, twitterlp[sub]))
-                        #print("skipped cause of twitterlp dupe")
+                        print("lasttweet: {} twitterlp: {}".format(lasttweet.full_text, twitterlp[sub]))
+                        print("skipped cause of twitterlp dupe")
                         continue
 
                 db.table("subdata").insert({"id": "twitterlp", sub: lasttweet.full_text}, conflict="update").run()
@@ -81,22 +82,24 @@ class TwitterContent:
                 fullchannels = channels
                 for channel in fullchannels:
                     # first we check if we have access to the channel.
-                    channel = self.bot.get_channel(channel)
-                    if not channel:
+                    channel_object = self.bot.get_channel(channel)
+                    if channel_object is None:
                         channels.remove(channel)
                         continue
                     # If we do, we check if we can send messages.
                     bot_user = self.bot.user
-                    bot_member = channel.server.get_member(bot_user.id)
-                    if not bot_member.permissions_in(channel).send_messages:
+                    bot_member = channel_object.server.get_member(bot_user.id)
+                    if not bot_member.permissions_in(channel_object).send_messages:
                         channels.remove(channel)
                         continue
                     try:
-
-                        await self.bot.send_message(self.bot.get_channel(channel), embed=em)
+                        await self.bot.send_message(channel_object, embed=em)
                     except Exception as e:
                         print("Error in twittercontent - sending message! e: {}".format(e))
                         pass
+
+                # commit the possible channel changes
+                db.table("subdata").insert({"id": "twitter", sub: channels}, conflict="update").run()
 
             await asyncio.sleep(60)
 
@@ -105,9 +108,11 @@ class TwitterContent:
         em = discord.Embed(
             description="{} \n\n [Tweet Link](https://twitter.com/{}/status/{})".format(tweet.full_text,
                                                                                             sub,
-                                                                                            tweet.id_str),
-            title="New tweet by {}:".format(tweet.user.name), color=discord.Color.blue())
+                                                                                            tweet.id_str), color=discord.Color.blue())
 
+        em.set_author(name="New tweet by {}".format(tweet.user.name), icon_url=tweet.user.profile_image_url)
+
+        em.set_footer(text="Twitter - @{}".format(tweet.user.screen_name), icon_url=self.twitter_icon)
         if tweet.media is not None and len(tweet.media) > 0:
             if hasattr(tweet.media[0], 'media_url'):
                 em.set_image(url=tweet.media[0].media_url)
