@@ -540,22 +540,20 @@ class main:
 
     @commands.command(aliases=['amos'])
     async def amos6(self):
-        """rip"""
-        await self.bot.say("Rip :( http://pop.h-cdn.co/assets/16/35/1472752799-ezgifcom-optimize-2.gif")
+        await self.bot.say("Deprecated: use .gifs")
 
     @commands.command()
     async def sfr2(self):
-        """rip2"""
-        await self.bot.say("Rip2 :( https://i.imgur.com/O86IDwm.gifv")
+        await self.bot.say("Deprecated: use .gifs")
 
     @commands.command()
     async def tank(self):
-        """rip3"""
-        await self.bot.say("rip3 :( https://i.imgur.com/c4cEb6U.gifv")
+        await self.bot.say("Deprecated: use .gifs")
 
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, no_pm=True, aliases=["gifs"])
     async def gif(self, ctx, gifname: str = None, *, gifmessage: str = None):
+        """Allows the user to set custom response gifs with the bot."""
         prefix = getprefix(self.bot, ctx.message)
         userPerms = ctx.message.author.permissions_in(ctx.message.channel).manage_server
         # Try to get the welcome message
@@ -576,10 +574,16 @@ class main:
         # If they didn't request any gifs, display the list.
         if not gifname:
             if len(gifs) > 0:
-                await self.bot.say(":information_source: **This server has the following gifs:**\n"
-                                   "{}".format("\n".join(["- {} : {}<{}>"
-                                                         .format(v, k[k.find("http") if k.find("http") != -1 else 0:]) for v, k in gifs.items()])))
+                giflist = ""
                 # This code gets a list of gifs, and encapsulates only the url part of the gif in non-embed carets for discord.
+                for k, v in gifs.items():
+                    if v.find("http") != -1:
+                        giflist += "\n-`{}`: {}<{}>".format(k, v[0:v.find("http")],v[v.find("http"):])
+                    else:
+                        giflist += "\n-`{}`: {}".format(k, v)
+                await self.bot.say(":information_source: **This server has the following gifs:**"
+                                   "{}".format(giflist))
+
             elif userPerms:
                 await self.bot.say(
                     ":information_source: **This server has no custom gifs. \n\n To set one, use {}gif "
