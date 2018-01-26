@@ -16,12 +16,9 @@ import sys
 import feedparser
 sys.stdout.flush()
 
-
-
-f = open("tokens.json","r")
+f = open("tokens.json", "r")
 tokens = json.loads(f.read())
 f.close()
-
 
 # Adds error logging to Linux journalctl
 sys.stdout = TextIOWrapper(sys.stdout.detach(),
@@ -59,20 +56,14 @@ class main:
         self.newprefix = None
         self.bot = bot
         self.notifstimer = 0
-        self.ll = 0
-        self.nl = 0
-        self.nldata = []
-        self.lldata = []
+        self.last_fetch = 0
+        self.launch_data = []
         self.echos = {}
-
-
         self.mnames = {"January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6, "July": 7, "August": 8,
                        "September": 9, "October": 10,
                        "November": 11, "December": 12}
 
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
-
-
 
     async def on_ready(self):
         print('Logged in as', flush=True)
@@ -251,7 +242,6 @@ class main:
                 return
         self.echos[ctx.message.author.id] = time.time()
         await self.bot.delete_message(ctx.message)
-        r = lambda: random.randrange(1, 244)
         em = discord.Embed(description=message, color=discord.Colour.dark_blue())
         await self.bot.say(embed=em)
 
@@ -265,22 +255,16 @@ class main:
         if amount.isdigit():
             if int(amount) > 100:
                 await self.bot.say(
-                    "Usage : *{}purge [messages]* \n Messages has to be below 100 (except easter eggs).".format(
+                    "Usage : `**{}purge [messages - maximum of 100]**`".format(
                         getprefix(self.bot, ctx.message)))
-                return
+            else:
+                amount = int(amount)
+                await self.bot.purge_from(ctx.message.channel, limit=amount)
+
         else:
             await self.bot.delete_message(ctx.message)
             await self.bot.say("**I WILL DESTROY {}** :boom: :boom:".format(amount.upper()))
-            return
 
-        amount = int(amount)
-
-        await self.bot.purge_from(ctx.message.channel, limit=amount)
-
-    @commands.command(pass_context=True)
-    async def notiftimer(self, ctx, amount: int = None):
-        """Debug"""
-        await self.bot.say(120 - (time.time() - self.notifstimer))
 
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, no_pm=True, aliases=['wm'])
@@ -387,9 +371,6 @@ class main:
 
         db.table("subdata").insert({"id": "rss", rss_link:sub_list}, conflict="update").run()
 
-
-
-
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, aliases=['twitter'])
     async def twitternotifs(self, ctx, subname: str = None):
@@ -402,7 +383,7 @@ class main:
         channel_twitter_subs = []
         completetwitterdb = db.table("subdata").get("twitter").run()
 
-        if completetwitterdb == None:
+        if not completetwitterdb:
             completetwitterdb = {}
 
         for k, v in completetwitterdb.items():
@@ -445,10 +426,6 @@ class main:
             await self.bot.say(":bell: **This channel will be notified of new tweets from `@{}`**".format(subname))
 
         db.table("subdata").insert({"id": "twitter", subname:sublist}, conflict="update").run()
-
-
-
-
 
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, aliases=['reddit'])
@@ -528,43 +505,38 @@ class main:
     @commands.command(pass_context=True)
     async def getinvite(self, ctx, serverid: str, invlength: int):
         if not str(ctx.message.author.id) == "146357631760596993":
-            await self.bot.say(":x: **Restricted!**")
-            return
-        try:
-            invite = str(await self.bot.create_invite(self.bot.get_server(serverid), max_age=invlength))
-        except discord.errors.Forbidden:
-            invite = "Couldn't manage to create invite"
+            try:
+                invite = str(await self.bot.create_invite(self.bot.get_server(serverid), max_age=invlength))
+            except discord.errors.Forbidden:
+                invite = "Couldn't manage to create invite"
 
-        await self.bot.say("yes master {}".format(invite))
+            await self.bot.say("yes master {}".format(invite))
 
     @commands.command(pass_context=True)
     async def getall(self, ctx):
-        if not str(ctx.message.author.id) == "146357631760596993":
-            await self.bot.say(":x: **Restricted!**")
-            return
+        if str(ctx.message.author.id) == "146357631760596993":
+            users = sum([len(r.members) for r in self.bot.servers])
+            bots = sum([len([x for x in r.members if x.bot]) for r in self.bot.servers])
+            await self.bot.say(
+                "I am in **{}** servers, that overall have **{}** members and **{}** bots.".format(len(self.bot.servers),
+                                                                                                   users - bots, bots))
 
-        users = sum([len(r.members) for r in self.bot.servers])
-        bots = sum([len([x for x in r.members if x.bot]) for r in self.bot.servers])
-        await self.bot.say(
-            "I am in **{}** servers, that overall have **{}** members and **{}** bots.".format(len(self.bot.servers),
-                                                                                               users - bots, bots))
+            message = ""
+            counter = 0
+            for server in self.bot.servers:
+                counter += 1
+                bots = 0
+                for member in server.members:
+                    if member.bot:
+                        bots += 1
+                message = message + "\n Server id: {}\n Server name: {} \n Members: {} \n Bots: {}\n----------------------------".format(
+                    server.id, server.name, len(server.members) - bots, bots)
 
-        message = ""
-        counter = 0
-        for server in self.bot.servers:
-            counter += 1
-            bots = 0
-            for member in server.members:
-                if member.bot:
-                    bots += 1
-            message = message + "\n Server id: {}\n Server name: {} \n Members: {} \n Bots: {}\n----------------------------".format(
-                server.id, server.name, len(server.members) - bots, bots)
+            r = requests.post("https://pastebin.com/api/api_post.php",
+                              data={'api_dev_key': '53f35aa049c27370155d4c4e7db0de86', 'api_option': 'paste',
+                                    'api_paste_code': message})
 
-        r = requests.post("https://pastebin.com/api/api_post.php",
-                          data={'api_dev_key': '53f35aa049c27370155d4c4e7db0de86', 'api_option': 'paste',
-                                'api_paste_code': message})
-
-        await self.bot.say("Pastebin data here: {}".format(r.text))
+            await self.bot.say("Pastebin data here: {}".format(r.text))
 
     @commands.command(aliases=['amos'])
     async def amos6(self):
@@ -581,117 +553,50 @@ class main:
         """rip3"""
         await self.bot.say("rip3 :( https://i.imgur.com/c4cEb6U.gifv")
 
-    @commands.command(pass_context=True)
-    async def launchnotify(self, ctx, *, agency: str = None):
+    @commands.command()
+    async def fh(self):
+        await self.bot.say("In **6 days.**")
 
-        # Get agencies from rethink db -- add filter
-        ulndata = db.table("launchnotify").get(ctx.message.server.id).run()
-        if not ulndata:
-            ulndata = {}
-            useragencies = []
-        else:
-            useragencies = [ulndata[k]["data"]["name"] for k, v in ulndata.items() if ctx.message.author.id in v]
-
-        if not agency:
-            if len(useragencies) > 0:
-                await self.bot.say(":bell: **You're subscribed to the following agencies: `{}`** "
-                                   "\n To toggle an agency subscription: `{}launchnotify [agency_name]`"
-                                   "\n You'll be notified **24 hours, 6 hours, and 1 hour** before any launch by that agency.".format(
-                    ", ".join(useragencies), getprefix(self.bot, ctx.message)))
-                return
-            else:
-                await self.bot.say(":no_bell: **You're not subscribed to any agency.** "
-                                   "\n To toggle an agency subscription: `{}launchnotify [agency_name]`"
-                                   "\n You'll be notified **24 hours, 6 hours, and 1 hour** before any launch by that agency.".format(
-                    getprefix(self.bot, ctx.message)))
-                return
-
-        agency = agency.replace(" ", "_")
-        async with self.session.get("https://launchlibrary.net/1.2/agency?name={}".format(agency)) as resp:
-            agencydata = (await resp.json())["agencies"]
-
-        if len(agencydata) > 1:
-            await self.bot.say(":x: **The search returned more than one agency that fits this name. "
-                               "\nPlease pick a more descriptive name**.")
-            return
-        elif len(agencydata) == 0:
-            await self.bot.say(":x: **The search returned 0 agencies that fit this name. "
-                               "\nPlease pick a more accurate/ less descriptive name**.")
-            return
-
-        agencydata = agencydata[0]
-        agencydata['id'] = str(agencydata['id'])
-        if agencydata['id'] not in ulndata:
-            ulndata[agencydata['id']] = []
-
-        if ctx.message.author.id in ulndata[agencydata['id']]:
-            await self.bot.say(
-                ":no_bell: **You will no longer receive launch notifications from {}.**".format(agencydata["name"]))
-            ulndata[agencydata['id']].remove(ctx.message.author.id)
-        else:
-            await self.bot.say(
-                ":bell: **You will get notified for launches by {}.**"
-                "\n You'll be notified **24 hours, 6 hours, and 1 hour** before any launch by that agency.".format(
-                    agencydata["name"]))
-            ulndata[agencydata['id']].append(agencydata)
-
-        db.table('launchnotify').insert({"id": ctx.message.server.id, agencydata['id']: ulndata[agencydata['id']]},
-                                        conflict="update").run()
-
-    @commands.command(aliases=['falconheavy','fh'])
-    async def whenisfalconheavylaunching(self):
-        await self.bot.say("In **6 weeks.**")
-
-
-    async def toggleNotify(self, notifyRole, member):
-        if notifyRole in member.roles:
-            await self.bot.remove_roles(member, notifyRole)
+    async def toggle_notify(self, notify_role, member):
+        if notify_role in member.roles:
+            await self.bot.remove_roles(member, notify_role)
             return False
         else:
-            await self.bot.add_roles(member, notifyRole)
+            await self.bot.add_roles(member, notify_role)
             return True
 
-
     @commands.command(pass_context=True)
-    async def notifyme(self, ctx, *, agencyListRaw:str = "Launch"):
+    async def notifyme(self, ctx, *, agency_list_raw: str = "Launch"):
         if int(ctx.message.server.id) != 316186751565824001:
             return
-        agencyList = agencyListRaw.split(" ")
+        agency_list = agency_list_raw.split(" ")
         # Lowering the cases
-
-        agencyList = [r.lower() for r in agencyList]
+        agency_list = [r.lower() for r in agency_list]
 
         agency_roles = []
-        #print(agencyList)
-        reverseShortcuts = {v.lower():k.lower() for k, v in SHORTCUTS.items()}
-        #print(reverseShortcuts)
+        reverse_shortcuts = {v.lower():k.lower() for k, v in SHORTCUTS.items()}
         for r in ctx.message.server.roles:
-            for j in agencyList:
-
-
-                if j == r.name.lower()[:-7] or reverseShortcuts.get(j, "invalid") == r.name.lower()[:-7]:
+            for j in agency_list:
+                if j == r.name.lower()[:-7] or reverse_shortcuts.get(j, "invalid") == r.name.lower()[:-7]:
                     agency_roles.append(r)
-
-
-        #print([r.name for r in agency_roles])
 
         # No input
         if len(agency_roles) == 0:
             # Getting role list
-            roleList = [r.name for r in ctx.message.server.roles if "-notify" in r.name.lower()]
+            role_list = [r.name for r in ctx.message.server.roles if "-notify" in r.name.lower()]
             # Removing "-notify"s
-            roleList = [r[:-7] for r in roleList]
+            role_list = [r[:-7] for r in role_list]
             # Removing All
-            roleList = [r for r in roleList if r != "All" and r != "Launch"]
+            role_list = [r for r in role_list if r != "All" and r != "Launch"]
             # Handling shortcuts
-            roleList = [(r + " - **" + SHORTCUTS.get(r, r)) + "**" for r in roleList]
+            role_list = [(r + " - **" + SHORTCUTS.get(r, r)) + "**" for r in role_list]
 
             await self.bot.say(":information_source: **This agency does not exist. \n Usage: `{}notifyme [agency] [agency] [agency]...`\n __Available agencies__**: "
                                "\n **All - All launch updates and agency updates.**"
                                "\n **Launch - All launch updates.**\n"
                                "\n*{}* "
                                "\n `lowercase` works too."
-                               .format(getprefix(bot, ctx.message), "\n".join(roleList)))
+                               .format(getprefix(bot, ctx.message), "\n".join(role_list)))
             return
 
         member = ctx.message.author
@@ -700,8 +605,8 @@ class main:
 
         try:
             for r in agency_roles:
-                #Checks if it has been added or removed
-                toggle =  await self.toggleNotify(r, member)
+                # Checks if it has been added or removed
+                toggle =  await self.toggle_notify(r, member)
                 if toggle:
                     added_roles.append(r.name[:-7])
                 else:
@@ -710,7 +615,6 @@ class main:
         except discord.Forbidden:
             await self.bot.say(":x: I cannot manage roles.")
             return
-
 
         message = ""
         if len(added_roles) > 0:
@@ -725,62 +629,80 @@ class main:
             else:
                 message += ":no_bell: **You will no longer be `@mentioned` on launches, launch updates, news and events related to `{}`.**\n".format(", ".join(removed_roles))
 
-        if len(removed_roles) + len(added_roles) < len(agencyList):
-            removed =  len(agencyList) - (len(removed_roles) + len(added_roles))
+        if len(removed_roles) + len(added_roles) < len(agency_list):
+            removed = len(agency_list) - (len(removed_roles) + len(added_roles))
             message += "*{} invalid roles have been omitted.*".format(removed)
 
         await self.bot.say(message)
 
+    async def get_launch_data(self):
+        """Returns a list containing launch data from www.launchlibrary.net
+            Thank you LL devs!"""
+
+        if time.time() - self.last_fetch > 1800:
+            resp = await self.fetch("https://launchlibrary.net/1.2/launch/next/10")
+            fetch_data = (await resp.json())["launches"]
+
+            self.last_fetch = time.time()
+            self.launch_data = fetch_data
+        else:
+            fetch_data = self.launch_data
+        if not fetch_data:
+            # This makes sure that the receiving end doesnt freak out from an empty array
+            fetch_data = []
+        return fetch_data
+
     @commands.command(pass_context=True, aliases=['nl'])
     async def nextlaunch(self, ctx):
         """Get information on the next launch."""
+        launch_info = await self.get_launch_data()
+        if len(launch_info) == 0:
+            await self.bot.say(":( Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
+            return
+        nldata = None
+        for r in launch_info:
+            if r["wsstamp"] == 0:
+                continue
 
-        if time.time() - self.nl > 900:
-            try:
-                async with self.session.get("https://launchlibrary.net/1.2/launch/next/10") as resp:
-                    nlinfo = (await resp.json())["launches"]
+            if r["status"] == 1:
+                nldata = r
+                break
 
-            except asyncio.TimeoutError:
-                print("nlinfo timeout")
+        if not nldata:
+            await self.bot.say(":rocket: Currently there are 0 listed launches with accurate dates. Check back soon :alarm_clock: !")
+            return
 
-            for r in nlinfo:
-                if r["wsstamp"] == 0:
-                    continue
-
-                ttime = self.gettimeto(r["wsstamp"])
-
-                if r["status"] == 1:
-                    nldata = r
-                    break
-
-            self.nldata = nldata
-            self.nl = time.time()
-
-        else:
-            nldata = self.nldata
-            ttime = self.gettimeto(nldata["wsstamp"])
+        time_to_launch = self.gettimeto(nldata["wsstamp"])
 
         fullmessage = "Vehicle: __**{0[0]}**__| Payload: __**{0[1]}**__".format(nldata["name"].split('|'))
 
         ws = nldata["windowstart"][:-7]
         ws = ws[0:ws.index(str(datetime.now().year))] + ws[-5:] + " UTC"
 
-        fullmessage += " | Time: {} \n\n".format(ws)
+        fullmessage += " | Time: __**{}**__\n".format(ws)
 
-        if ttime["days"] != 1:
-            fullmessage += "**In {} days,".format(ttime["days"])
+        try:
+            # The launch site will be one line down from the time and other things
+            launchsite = nldata["location"]["pads"][0]["name"]
+            fullmessage += "Pad: __**{}**__".format(launchsite)
+        except KeyError:
+            pass
+        fullmessage += "\n\n" # We print those here to make sure it newlines twice
+
+        if time_to_launch["days"] != 1:
+            fullmessage += "**In {} days,".format(time_to_launch["days"])
         else:
             fullmessage += "**In 1 day,"
 
-        fullmessage += " {} hours, and {} minutes.**".format(ttime["hours"], ttime["minutes"])
+        fullmessage += " {} hours, and {} minutes.**".format(time_to_launch["hours"], time_to_launch["minutes"])
 
         # We check if there is an available live stream.
-        if (len(nldata["vidURLs"])>0):
+        if len(nldata["vidURLs"]>0):
             vidurl = nldata["vidURLs"][0]
             fullmessage += "\n**[Livestream available!]({})**".format(vidurl)
 
         if int(ctx.message.server.id) == 316186751565824001:
-            fullmessage += "\n\n**To be notified on launches and special events, use the command `.notifyme`**"
+            fullmessage += "\n**To be notified on launches and special events, use the command `.notifyme`**"
 
         em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
         em.set_author(name="Next launch:",
@@ -791,23 +713,14 @@ class main:
     async def listlaunches(self):
         """Get a list of launches"""
 
-        if time.time() - self.ll > 1800:
-            try:
-                async with self.session.get("https://launchlibrary.net/1.2/launch/next/10") as resp:
-                    lldata = (await resp.json())["launches"]
-
-            except asyncio.TimeoutError:
-                print("llinfo timeout")
-
-
-            self.lldata = lldata
-            self.ll = time.time()
-        else:
-            lldata = self.lldata
+        launch_info = await self.get_launch_data()
+        if len(launch_info) == 0:
+            await self.bot.say(":( Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
+            return
 
         fullmessage = ""
         actlaunches = 0
-        for launch in lldata:
+        for launch in launch_info:
             if launch["status"] != 1 and actlaunches == 0:
                 continue
 
@@ -815,9 +728,13 @@ class main:
             fullmessage += "Vehicle: __**{0[0]}**__| Payload: __**{0[1]}**__".format(launch["name"].split('|'))
 
             ws = launch["windowstart"][:-7]
-            #ws now: December 30, 2017 00:00
-            ws = ws[0:ws.index(',') + 2] + ws[-5:] + " UTC"
-            #ws now December 30, 00:00 UTC
+            # If the launch was not assigned an accurate date yet, display the month only.
+            if launch["status"] == 2:
+                ws = ws[0:ws.index(' ')]
+            else:
+                # ws now: December 30, 2017 00:00
+                ws = ws[0:ws.index(',') + 2] + ws[-5:] + " UTC"
+                # ws now: December 30, 00:00 UTC
 
             fullmessage += " | Time: {}\n".format(ws)
 
@@ -829,15 +746,10 @@ class main:
     @commands.command(pass_context=True, aliases=['elonquote', 'eq'])
     async def elon(self):
         with open('./elonquotes.txt') as data_file:
-            eql = data_file.readlines()
+            quotes = data_file.readlines()
 
-        equotes = []
-        for r in range(0, len(eql), 3):
-            equotes.append(eql[r][1:])
-
-        print(equotes)
-        n = random.randrange(0, len(equotes))
-        desc = "**{}**".format(equotes[n])
+        n = random.randrange(0, len(quotes))
+        desc = "**{}**".format(quotes[n][1:])
         em = discord.Embed(description=desc, color=discord.Color.blue())
         em.set_author(name="And for today, quote number {}:".format(n), icon_url="http://i.imgur.com/hBbuHbq.png")
         await self.bot.say(embed=em)
@@ -865,6 +777,6 @@ class main:
 bot.add_cog(main(bot))
 bot.load_extension("redditcontent")
 bot.load_extension("twittercontent")
-#bot.load_extension("rsscontent")
+# bot.load_extension("rsscontent")
 
 bot.run(tokens["bot_token"])

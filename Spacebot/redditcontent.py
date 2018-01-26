@@ -20,7 +20,6 @@ db.connect("localhost", 28015, 'spacebot').repl()
 
 
 class RedditContent:
-
     def __init__(self, bot):
         self.bot = bot
         self.iconurls = {'spacex': 'https://pbs.twimg.com/profile_images/671865418701606912/HECw8AzK.jpg',
