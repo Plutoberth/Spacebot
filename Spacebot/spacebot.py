@@ -553,6 +553,50 @@ class main:
         """rip3"""
         await self.bot.say("rip3 :( https://i.imgur.com/c4cEb6U.gifv")
 
+    @checks.mod_or_permissions(manage_server=True)
+    @commands.command(pass_context=True, no_pm=True, aliases=["gifs"])
+    async def gif(self, ctx, gifname: str = None, *, gifmessage: str = None):
+        prefix = getprefix(self.bot, ctx.message)
+        userPerms = ctx.message.author.permissions_in(ctx.message.channel).manage_server
+        # Try to get the welcome message
+        gifs = {}
+        try:
+            gifs = db.table("serverdata").get(ctx.message.server.id).get_field("gifs").run()
+        except db.ReqlNonExistenceError:
+            # If the user didn't try to assign any gifs,
+            if gifname is None or gifmessage is None:
+                if userPerms:
+                    await self.bot.say(
+                        ":information_source: **This server has no custom gifs. \n\nTo set one, use {}gif "
+                        "[gifname] [gifurl]**".format(prefix))
+                else:
+                    await self.bot.say(":information_source: **This server has no custom gifs.\n Ask your admins to set some.**")
+                return
+
+        # If they didn't request any gifs, display the list.
+        if not gifname:
+            if len(gifs) > 0:
+                await self.bot.say(":information_source: **This server has the following gifs:**\n"
+                                   "{}".format("\n".join(["- {} : {}<{}>"
+                                                         .format(v, k[k.find("http") if k.find("http") != -1 else 0:]) for v, k in gifs.items()])))
+                # This code gets a list of gifs, and encapsulates only the url part of the gif in non-embed carets for discord.
+            elif userPerms:
+                await self.bot.say(
+                    ":information_source: **This server has no custom gifs. \n\n To set one, use {}gif "
+                    "[gifname] [gifurl]\n **".format(prefix))
+            else:
+                await self.bot.say(
+                    ":information_source: **This server has no custom gifs.\n Ask your admins to set some.**")
+            return
+        # If the user requested a gif, but didn't try to set one.
+        if not gifmessage or not userPerms:
+            await self.bot.say(gifs.get(gifname, ":x: **Gif not found!**.\nUse {}gifs to see the list.".format(prefix)))
+            return
+
+        gifs[gifname] = gifmessage
+        await self.bot.say(":white_check_mark: Set `{}` to `{}`.".format(gifname, gifmessage))
+
+        db.table('serverdata').insert({"id": ctx.message.server.id, "gifs": gifs}, conflict="update").run()
     @commands.command()
     async def fh(self):
         await self.bot.say("In **6 days.**")
@@ -730,7 +774,7 @@ class main:
             ws = launch["windowstart"][:-7]
             # If the launch was not assigned an accurate date yet, display the month only.
             if launch["status"] == 2:
-                ws = ws[0:ws.index(' ')]
+                ws = ws[0:ws.index(' ')] + " - Day TBD"
             else:
                 # ws now: December 30, 2017 00:00
                 ws = ws[0:ws.index(',') + 2] + ws[-5:] + " UTC"
