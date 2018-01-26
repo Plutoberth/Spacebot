@@ -565,8 +565,8 @@ class main:
             if gifname is None or gifmessage is None:
                 if userPerms:
                     await self.bot.say(
-                        ":information_source: **This server has no custom gifs. \n\nTo set one, use {}gif "
-                        "[gifname] [gifurl]**".format(prefix))
+                        ":information_source: **This server has no custom gifs. \n\nTo set some, use `{}gif "
+                        "[gifname] [gifurl]`**".format(prefix))
                 else:
                     await self.bot.say(":information_source: **This server has no custom gifs.\n Ask your admins to set some.**")
                 return
@@ -581,6 +581,8 @@ class main:
                         giflist += "\n-`{}`: {}<{}>".format(k, v[0:v.find("http")],v[v.find("http"):])
                     else:
                         giflist += "\n-`{}`: {}".format(k, v)
+                if userPerms:
+                    giflist += "\n To add more, use `{}gif [gifname] [gifurl]`".format(prefix)
                 await self.bot.say(":information_source: **This server has the following gifs:**"
                                    "{}".format(giflist))
 
