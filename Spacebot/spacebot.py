@@ -58,7 +58,6 @@ class main:
         self.notifstimer = 0
         self.last_fetch = 0
         self.launch_data = []
-        self.echos = {}
         self.mnames = {"January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6, "July": 7, "August": 8,
                        "September": 9, "October": 10,
                        "November": 11, "December": 12}
@@ -228,6 +227,7 @@ class main:
             em.set_image(url=url)
             await self.bot.say(embed=em)
 
+    @commands.cooldown(1, 30, commands.BucketType.user)
     @checks.mod_or_permissions(manage_channels=True)
     @commands.command(pass_context=True)
     async def echo(self, ctx, *, message: str = None):
@@ -235,11 +235,6 @@ class main:
         if not message:
             return
 
-        if ctx.message.author.id in self.echos:
-            if time.time() - self.echos[ctx.message.author.id] < 30 and not ctx.message.author.permissions_in(
-                    ctx.message.channel).manage_channels:
-                await self.bot.delete_message(ctx.message)
-                return
         self.echos[ctx.message.author.id] = time.time()
         await self.bot.delete_message(ctx.message)
         em = discord.Embed(description=message, color=discord.Colour.dark_blue())
@@ -550,12 +545,12 @@ class main:
     async def tank(self):
         await self.bot.say("Deprecated: use .gifs")
 
-    @checks.mod_or_permissions(manage_server=True)
-    @commands.command(pass_context=True, no_pm=True, aliases=["gifs"])
+    @commands.cooldown(1, 45, commands.BucketType.user)
+    @commands.command(pass_context=True, no_pm=True, aliases=["gifs","graphicsinterchangeformat"])
     async def gif(self, ctx, gifname: str = None, *, gifmessage: str = None):
         """Allows the user to set custom response gifs with the bot."""
         prefix = getprefix(self.bot, ctx.message)
-        userPerms = ctx.message.author.permissions_in(ctx.message.channel).manage_server
+        user_perms = ctx.message.author.permissions_in(ctx.message.channel).manage_server
         # Try to get the welcome message
         gifs = {}
         try:
@@ -563,7 +558,7 @@ class main:
         except db.ReqlNonExistenceError:
             # If the user didn't try to assign any gifs,
             if gifname is None or gifmessage is None:
-                if userPerms:
+                if user_perms:
                     await self.bot.say(
                         ":information_source: **This server has no custom gifs. \n\nTo set some, use `{}gif "
                         "[gifname] [gifurl]`**".format(prefix))
@@ -581,12 +576,12 @@ class main:
                         giflist += "\n-`{}`: {}<{}>".format(k, v[0:v.find("http")],v[v.find("http"):])
                     else:
                         giflist += "\n-`{}`: {}".format(k, v)
-                if userPerms:
+                if user_perms:
                     giflist += "\n To add more, use `{}gif [gifname] [gifurl]`".format(prefix)
                 await self.bot.say(":information_source: **This server has the following gifs:**"
                                    "{}".format(giflist))
 
-            elif userPerms:
+            elif user_perms:
                 await self.bot.say(
                     ":information_source: **This server has no custom gifs. \n\n To set one, use {}gif "
                     "[gifname] [gifurl]\n **".format(prefix))
@@ -595,7 +590,7 @@ class main:
                     ":information_source: **This server has no custom gifs.\n Ask your admins to set some.**")
             return
         # If the user requested a gif, but didn't try to set one.
-        if not gifmessage or not userPerms:
+        if not gifmessage or not user_perms:
             await self.bot.say(gifs.get(gifname, ":x: **Gif not found!**.\nUse {}gifs to see the list.".format(prefix)))
             return
 
@@ -747,12 +742,12 @@ class main:
         fullmessage += " {} hours, and {} minutes.**".format(time_to_launch["hours"], time_to_launch["minutes"])
 
         # We check if there is an available live stream.
-        if len(nldata["vidURLs"]>0):
+        if len(nldata["vidURLs"]) > 0:
             vidurl = nldata["vidURLs"][0]
             fullmessage += "\n**[Livestream available!]({})**".format(vidurl)
 
         if int(ctx.message.server.id) == 316186751565824001:
-            fullmessage += "\n**To be notified on launches and special events, use the command `.notifyme`**"
+            fullmessage += "\n\n**To be notified on launches and special events, use the command `.notifyme`**"
 
         em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
         em.set_author(name="Next launch:",
