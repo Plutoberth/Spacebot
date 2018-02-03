@@ -45,7 +45,7 @@ SHORTCUTS = {"VirginGalactic": "VG", "Roscosmos": "RFSA", "SpaceX": "SpX", "Orbi
              "SierraNevadaCorp" : "SNC", "CopenhagenSuborbitals" : "Copsub", "StratolaunchSystems": "Stratolaunch"}
 
 
-description = '''A bot made by @Cakeofdestiny for space-related info, launch timings, tweets, and reddit posts.'''
+description = '''A bot made by @Cakeofdestiny:2318 for space-related info, launch timings, tweets, and reddit posts.'''
 
 bot = commands.Bot(command_prefix=getprefix, description=description)
 
@@ -234,8 +234,7 @@ class main:
         """Repeat a message."""
         if not message:
             return
-
-        self.echos[ctx.message.author.id] = time.time()
+        
         await self.bot.delete_message(ctx.message)
         em = discord.Embed(description=message, color=discord.Colour.dark_blue())
         await self.bot.say(embed=em)
@@ -545,7 +544,6 @@ class main:
     async def tank(self):
         await self.bot.say("Deprecated: use .gifs")
 
-    @commands.cooldown(1, 45, commands.BucketType.user)
     @commands.command(pass_context=True, no_pm=True, aliases=["gifs","graphicsinterchangeformat"])
     async def gif(self, ctx, gifname: str = None, *, gifmessage: str = None):
         """Allows the user to set custom response gifs with the bot."""
@@ -577,7 +575,7 @@ class main:
                     else:
                         giflist += "\n-`{}`: {}".format(k, v)
                 if user_perms:
-                    giflist += "\n To add more, use `{}gif [gifname] [gifurl]`".format(prefix)
+                    giflist += "\n To add more, use `{0}gif [gifname] [gifurl] or `{0}gif remove [gifname] to remove.`".format(prefix)
                 await self.bot.say(":information_source: **This server has the following gifs:**"
                                    "{}".format(giflist))
 
@@ -591,16 +589,49 @@ class main:
             return
         # If the user requested a gif, but didn't try to set one.
         if not gifmessage or not user_perms:
-            await self.bot.say(gifs.get(gifname, ":x: **Gif not found!**.\nUse {}gifs to see the list.".format(prefix)))
+            await self.bot.say(gifs.get(gifname, ":x: **Gif not found!**\nUse {}gifs to see the list.".format(prefix)))
             return
 
-        gifs[gifname] = gifmessage
-        await self.bot.say(":white_check_mark: Set `{}` to `{}`.".format(gifname, gifmessage))
+        if gifname == "remove":
+            if gifmessage in gifs:
+                del gifs[gifmessage]
+                await self.bot.say("🚮 Removed `{}`.".format(gifmessage))
+            else:
+                await self.bot.say(":x: `{}` isn't a gif in this server. Could you have misspelled it?".format(gifmessage))
+        else:
+            gifs[gifname] = gifmessage
+            await self.bot.say(":white_check_mark: Set `{}` to `{}`.".format(gifname, gifmessage))
 
-        db.table('serverdata').insert({"id": ctx.message.server.id, "gifs": gifs}, conflict="update").run()
-    @commands.command()
-    async def fh(self):
-        await self.bot.say("In **6 days.**")
+        db.table('serverdata').insert({"id": ctx.message.server.id, "gifs": gifs}, conflict="replace").run()
+
+    @commands.command(pass_context=True)
+    async def fh(self, ctx):
+        """Falcon Heavy!"""
+        time_to_launch = self.gettimeto(1517941800)
+
+        fullmessage = "Vehicle: __**Falcon Heavy**__ | Payload: __**Elon's Midnight Cherry Roadster**__"
+
+        fullmessage += " | Time: __**February 6, 18:30 UTC**__\n"
+
+        fullmessage += "Pad: __**Historic LC-39A**__"
+
+        fullmessage += "\n\n"
+
+        if time_to_launch["days"] != 1:
+            fullmessage += "**In {} days,".format(time_to_launch["days"])
+        else:
+            fullmessage += "**In 1 day,"
+
+        fullmessage += " {} hours, and {} minutes.**".format(time_to_launch["hours"], time_to_launch["minutes"])
+
+        # We check if there is an available live stream.
+        fullmessage += "\n**[Livestream available!](https://www.spacex.com/webcast)**"
+
+        em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
+        em.set_thumbnail(url="https://cdn.teslarati.com/wp-content/uploads/2017/12/Roadster-and-Falcon-Heavy-Elon-Musk-2-e1513972707360.jpg")
+        em.set_author(name="Falcon Heavy:",
+                      icon_url="https://mk0spaceflightnoa02a.kinstacdn.com/wp-content/uploads/2017/01/C1pzAfrWEAIi7RU.png")
+        await self.bot.send_message(ctx.message.channel, embed=em)
 
     async def toggle_notify(self, notify_role, member):
         if notify_role in member.roles:
@@ -664,7 +695,7 @@ class main:
         message = ""
         if len(added_roles) > 0:
             if len(added_roles) == 1 and added_roles[0] == "Launch":
-                message += ":bell: You will be `@mentioned on launches.` \nYou can sign up for more frequent and diverse updates using `.notifyme all`, or for updates for specific agencies only - use `.notifyme ?` to display full list.**\n"
+                message += ":bell: You will be `@mentioned on launches.` \n\n**You can sign up for more frequent and diverse updates using `.notifyme all`, or for updates for specific agencies only - use `.notifyme ?` to display full list.**\n"
             else:
                 message += ":bell: **You will be `@mentioned` on launches, launch updates, news and events related to `{}`.**\n".format(", ".join(added_roles))
 
