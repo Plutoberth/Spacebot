@@ -52,7 +52,6 @@ class TwitterContent:
                 # If it has no members we just skip it for efficiencies sake
                 if len(channels) == 0:
                     continue
-                #print("sub: {} channels {}".format(sub,channels))
                 try:
                     lasttweet = twitterapi.GetUserTimeline(screen_name=sub, count=1, include_rts=False, exclude_replies=True)[0]
 
@@ -71,8 +70,9 @@ class TwitterContent:
 
                 if sub in twitterlp:
                     if lasttweet.full_text == twitterlp[sub]:
-                        print("lasttweet: {} twitterlp: {}".format(lasttweet.full_text, twitterlp[sub]))
-                        print("skipped cause of twitterlp dupe")
+                        # print("lasttweet: {} twitterlp: {}".format(lasttweet.full_text, twitterlp[sub]))
+                        # print("skipped cause of twitterlp dupe")
+                        # way too many messages
                         continue
 
                 db.table("subdata").insert({"id": "twitterlp", sub: lasttweet.full_text}, conflict="update").run()

@@ -283,11 +283,15 @@ class main:
 
         # If it exists, and the user did not enter one, reply with the message.
         if message is None:
+            r = requests.post("https://pastebin.com/api/api_post.php",
+                              data={'api_dev_key': tokens["pastebin_api_dev_key"], 'api_option': 'paste',
+                                    'api_paste_code': wmessage[1]})
+
             await self.bot.say(
-                ":information_source: **The welcome message for this server is: `{0}` \n\n To change it, "
-                "use {1}wm [message]"
-                "\n Curly Brackets `{2}` in your message will be replaced with a mention of the user."
-                "\n Type `{1}wm clear`** ".format(wmessage[1], prefix, '{}'))
+                ":information_source: **The welcome message for this server is hosted on Pastebin: {0} \n\nTo change it, "
+                "use `{1}wm [message]`"
+                "\nCurly Brackets `{2}` in your message will be replaced with a mention of the user."
+                "\nTo disable welcome messages, type `{1}wm clear`** ".format(r.text, prefix, '{}'))
             return
 
         if "{}" not in message:
@@ -527,7 +531,7 @@ class main:
                     server.id, server.name, len(server.members) - bots, bots)
 
             r = requests.post("https://pastebin.com/api/api_post.php",
-                              data={'api_dev_key': '53f35aa049c27370155d4c4e7db0de86', 'api_option': 'paste',
+                              data={'api_dev_key': tokens["pastebin_api_dev_key"], 'api_option': 'paste',
                                     'api_paste_code': message})
 
             await self.bot.say("Pastebin data here: {}".format(r.text))
@@ -575,7 +579,7 @@ class main:
                     else:
                         giflist += "\n-`{}`: {}".format(k, v)
                 if user_perms:
-                    giflist += "\n To add more, use `{0}gif [gifname] [gifurl] or `{0}gif remove [gifname] to remove.`".format(prefix)
+                    giflist += "\n To add more, use `{0}gif [gifname] [gifurl]` or `{0}gif remove [gifname] to remove.`".format(prefix)
                 await self.bot.say(":information_source: **This server has the following gifs:**"
                                    "{}".format(giflist))
 
@@ -604,35 +608,6 @@ class main:
 
         db.table('serverdata').insert({"id": ctx.message.server.id, "gifs": gifs}, conflict="replace").run()
 
-    @commands.command(pass_context=True)
-    async def fh(self, ctx):
-        """Falcon Heavy!"""
-        time_to_launch = self.gettimeto(1517941800)
-
-        fullmessage = "Vehicle: __**Falcon Heavy**__ | Payload: __**Elon's Midnight Cherry Roadster**__"
-
-        fullmessage += " | Time: __**February 6, 18:30 UTC**__\n"
-
-        fullmessage += "Pad: __**Historic LC-39A**__"
-
-        fullmessage += "\n\n"
-
-        if time_to_launch["days"] != 1:
-            fullmessage += "**In {} days,".format(time_to_launch["days"])
-        else:
-            fullmessage += "**In 1 day,"
-
-        fullmessage += " {} hours, and {} minutes.**".format(time_to_launch["hours"], time_to_launch["minutes"])
-
-        # We check if there is an available live stream.
-        fullmessage += "\n**[Livestream available!](https://www.spacex.com/webcast)**"
-
-        em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
-        em.set_thumbnail(url="https://cdn.teslarati.com/wp-content/uploads/2017/12/Roadster-and-Falcon-Heavy-Elon-Musk-2-e1513972707360.jpg")
-        em.set_author(name="Falcon Heavy:",
-                      icon_url="https://mk0spaceflightnoa02a.kinstacdn.com/wp-content/uploads/2017/01/C1pzAfrWEAIi7RU.png")
-        await self.bot.send_message(ctx.message.channel, embed=em)
-
     async def toggle_notify(self, notify_role, member):
         if notify_role in member.roles:
             await self.bot.remove_roles(member, notify_role)
@@ -640,6 +615,36 @@ class main:
         else:
             await self.bot.add_roles(member, notify_role)
             return True
+
+    @commands.command(pass_context=True)
+    async def fh(self, ctx):
+        time_to_launch = self.gettimeto(1517949900)
+
+        fullmessage = "Vehicle: __**Falcon Heavy**__ | Payload: __**Elon's Midnight Cherry Roadster**__"
+
+        fullmessage += " | Time: __**February 6, 20:45 UTC**__\n"
+
+        fullmessage += "Pad: __**Historic LC-39A**__ \nStatus : **Resounding Success!**"
+
+        fullmessage += "\n"
+
+        #if time_to_launch["days"] != 1:
+        #    fullmessage += "**In {} days,".format(time_to_launch["days"])
+        #else:
+        #    fullmessage += "**In 1 day,"
+
+        #fullmessage += " {} hours, and {} minutes.**".format(time_to_launch["hours"], time_to_launch["minutes"])
+
+        # We check if there is an available live stream.
+        fullmessage += "\n**[Recording available!](https://www.youtube.com/watch?v=wbSwFU6tY1c)**"
+
+        fullmessage += "\n**Thanks to everyone who joined us. We hope to see you on the next launches!**"
+
+        em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
+        em.set_thumbnail(url="https://cdn.teslarati.com/wp-content/uploads/2017/12/Roadster-and-Falcon-Heavy-Elon-Musk-2-e1513972707360.jpg")
+        em.set_author(name="Falcon Heavy:",
+                      icon_url="https://mk0spaceflightnoa02a.kinstacdn.com/wp-content/uploads/2017/01/C1pzAfrWEAIi7RU.png")
+        await self.bot.send_message(ctx.message.channel, embed=em)
 
     @commands.command(pass_context=True)
     async def notifyme(self, ctx, *, agency_list_raw: str = "Launch"):
