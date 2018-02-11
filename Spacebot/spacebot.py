@@ -535,19 +535,7 @@ class main:
                                     'api_paste_code': message})
 
             await self.bot.say("Pastebin data here: {}".format(r.text))
-
-    @commands.command(aliases=['amos'])
-    async def amos6(self):
-        await self.bot.say("Deprecated: use .gifs")
-
-    @commands.command()
-    async def sfr2(self):
-        await self.bot.say("Deprecated: use .gifs")
-
-    @commands.command()
-    async def tank(self):
-        await self.bot.say("Deprecated: use .gifs")
-
+            
     @commands.command(pass_context=True, no_pm=True, aliases=["gifs","graphicsinterchangeformat"])
     async def gif(self, ctx, gifname: str = None, *, gifmessage: str = None):
         """Allows the user to set custom response gifs with the bot."""
@@ -834,6 +822,33 @@ class main:
         em = discord.Embed(description=desc, color=discord.Color.blue())
         em.set_author(name="And for today, quote number {}:".format(n), icon_url="http://i.imgur.com/hBbuHbq.png")
         await self.bot.say(embed=em)
+
+    @commands.command(pass_context=True, aliases=['decr'])
+    async def decronym(self, ctx, acronym :str=None):
+        # Big thanks to /u/OrangeredStilton for his acronym list!
+        with open('./decronym.json') as decronymFile:
+            decronym = json.load(decronymFile)
+        if not acronym:
+            await self.bot.say(":x: **Invalid Syntax!** \n Correct usage: `{}decronym/decr [acronym]`".format(getprefix(self.bot, ctx.message)))
+            return
+
+        matching_values = [value for key, value in decronym.items() if key.upper() == acronym.upper()]
+        if len(matching_values) == 0:
+            await self.bot.say(":x: **0 Matching definitions found**. \n Could you have misspelled the acronym?")
+            return
+
+        matching_values = matching_values[0]
+        acronym_message = "\n".join(["{}. **{}**".format(i+1, matching_values[i]) for i in range(len(matching_values))])
+        if(len(matching_values) == 1):
+            em = discord.Embed(description=acronym_message,
+                               title="I found 1 definition for the acronym **{}**:".format(acronym.upper()),
+                               color=discord.Color.blue())
+        else:
+            em = discord.Embed(description=acronym_message,
+                               title="I found {} definitions for the acronym **{}**:".format(len(matching_values), acronym.upper()),
+                               color=discord.Color.blue())
+        await self.bot.say(embed=em)
+
 
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, no_pm=True)

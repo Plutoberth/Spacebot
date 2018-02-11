@@ -5,6 +5,8 @@
 #### The default prefix is '?'
 
 ## Commands 
+#####Note: These commands are only a limited the subset of the most crucial commands. Use ?help for more.
+
 #### ?reddit {subreddit}:
 Get notified about new posts from any subreddit in any selected channel.
 
@@ -32,6 +34,15 @@ Get a random Elon Musk quote.
 #### ?randomlanding:
 Get a random gif of a rocket landing or launch.
 
+#### ?gifs [gifname] [gifurl:optional for mods]
+Set custom gifs for your server. View with `?gifs`.
+
+#### ?decr/decronym [Acronym]
+Decronyms common (and not so common) space related acronyms.
+Thanks to the decronym.xyz project and /u/OrangeredStilton for the list!
+
+####?purge [amount]
+Mod command. Purge (delete) that amount of messages from the chat.
 
 ## Under development:
 
