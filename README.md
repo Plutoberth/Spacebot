@@ -22,10 +22,11 @@ Get info about the next 10 (at most) launches, time, launch pad, rocket, and pay
 #### ?prefix:
 Change the bot's prefix.
 
-#### ?welcomemessage {message}:
+#### ?welcomemessage [message]:
 Set a welcome message that will be posted to the channel every time a new user joins.
+Leave [message] blank to get a pastebin copy of the message current.
 Insert a {} in the message to replace it with a mention of the user.
-For example: Hey, {}, welcome to our server :D
+For example: `Hey, {}, welcome to our server :D`
 
 #### ?elon:
 Get a random Elon Musk quote.
@@ -37,7 +38,7 @@ Get a random gif of a rocket landing or launch.
 #### ?gifs [gifname] [gifurl:optional for mods]
 Set custom gifs for your server. View with `?gifs`.
 
-#### ?decr/decronym [Acronym]
+#### ?decr/decronym [acronym]
 Decronyms common (and not so common) space related acronyms.
 Thanks to the decronym.xyz project and /u/OrangeredStilton for the list!
 
