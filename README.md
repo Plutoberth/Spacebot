@@ -5,7 +5,7 @@
 #### The default prefix is '?'
 
 ## Commands 
-####Note: These commands are only a limited the subset of the most crucial commands. Use ?help for more.
+##### Note: These commands are only a limited the subset of the most crucial commands. Use ?help for more.
 
 #### ?reddit {subreddit}:
 Get notified about new posts from any subreddit in any selected channel.
