@@ -517,7 +517,7 @@ class main:
             bots = sum([len([x for x in r.members if x.bot]) for r in self.bot.servers])
             await self.bot.say(
                 "I am in **{}** servers, that overall have **{}** members and **{}** bots.".format(len(self.bot.servers),
-                                                                                                   users - bots, bots))
+                            ch                                                                       users - bots, bots))
 
             message = ""
             counter = 0
@@ -527,7 +527,7 @@ class main:
                 for member in server.members:
                     if member.bot:
                         bots += 1
-                message = message + "\n Server id: {}\n Server name: {} \n Members: {} \n Bots: {}\n----------------------------".format(
+                message = message + "\n Server id: {}\n Server name: {} \n Members: {} \n Bots: {}\n----------------------------".for(
                     server.id, server.name, len(server.members) - bots, bots)
 
             r = requests.post("https://pastebin.com/api/api_post.php",
@@ -535,7 +535,7 @@ class main:
                                     'api_paste_code': message})
 
             await self.bot.say("Pastebin data here: {}".format(r.text))
-            
+
     @commands.command(pass_context=True, no_pm=True, aliases=["gifs","graphicsinterchangeformat"])
     async def gif(self, ctx, gifname: str = None, *, gifmessage: str = None):
         """Allows the user to set custom response gifs with the bot."""
