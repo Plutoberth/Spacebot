@@ -49,6 +49,8 @@ description = '''A bot made by @Cakeofdestiny:2318 for space-related info, launc
 
 bot = commands.Bot(command_prefix=getprefix, description=description)
 
+# bot.remove_command("help")
+
 
 class main:
     def __init__(self, bot):
@@ -126,6 +128,49 @@ class main:
         except:
             pass
 
+    async def on_command_error(self, error, ctx):
+        if ctx.invoked_subcommand:
+            pages = bot.formatter.format_help_for(ctx, ctx.invoked_subcommand)
+        else:
+            pages = bot.formatter.format_help_for(ctx, ctx.command)
+
+        for page in pages:
+            if isinstance(error, commands.MissingRequiredArgument):
+                em = discord.Embed(title="Missing args :x:",
+                                   description=page.strip("```").replace('<', '[').replace('>', ']'),
+                                   color=discord.Color.red())
+            elif isinstance(error, commands.BadArgument):
+                em = discord.Embed(title="Bad args :x:",
+                                   description=page.strip("```").replace('<', '[').replace('>', ']'),
+                                   color=discord.Color.red())
+            else:
+                raise error
+
+            await self.bot.send_message(ctx.message.channel, embed=em)
+    """
+    @commands.command(pass_context=True)
+    async def help(self, ctx, specific: str = None):
+        fullmessage = ""
+
+        if specific:
+            command = self.bot.commands.get(specific)
+            if not command:
+                await self.embederror(ctx, "The command {} does not exist.".format(specific))
+                return
+            page = bot.formatter.format_help_for(ctx, command)[0]
+            fullmessage = page.strip("```").replace('<', '[').replace('>', ']')
+
+        else:
+            for key, value in sorted(self.bot.commands.items()):
+                if key in ['getinvite', 'l', 'getall', 'rss', 'wm','eq','graphicsinterchangeformat', 'gifs', 'eq', 'elonquote','decr']:
+                    continue
+                fullmessage += ("**_{}_ - {} **\n".format(key, value.short_doc))
+
+        em = discord.Embed(title="Displaying help for {}:".format(self.bot.user.name)
+                           , description=fullmessage, color=discord.Color.blue())
+        em.set_thumbnail(url=self.bot.user.avatar_url)
+        await self.bot.say(embed=em)"""
+
     async def updateservercount(self):
         while not self.bot.is_closed:
             thepostdata = {
@@ -176,7 +221,8 @@ class main:
 
     @commands.command(aliases=['addme'])
     async def invite(self):
-        em = discord.Embed(description="**Spacebot** by Cakeofdestiny.\n"
+        """Invite me to your server!"""
+        em = discord.Embed(description="**Spacebot** by Cakeofdestiny#2318 .\n"
                                        "[Invite Link](https://discordapp.com/oauth2/authorize?client_id=291185373860855808&scope=bot&permissions=27648)\n"
                                        "[Github](https://github.com/Cakeofdestiny/Spacebot)\n"
                                        "[Official Server (kinda)](https://discord.gg/dHdbpwV)",
@@ -309,7 +355,7 @@ class main:
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, aliases=['rss'])
     async def rssnotifs(self, ctx, rss_link: str = None):
-
+        """Get notifs from RSS sources."""
         # DB STRUCTURE
         # table : subdata
         # rows : rss/rsslp
@@ -454,7 +500,7 @@ class main:
                 await self.bot.say(
                     ":bell: **This channel receives reddit notifications from: `{}.`"
                     "\n\n Use `{}reddit [subreddit name]` to add more.**".format(
-                    prefix, ", ".join(channel_reddit_subs)))
+                     ", ".join(channel_reddit_subs), prefix))
             else:
                 await self.bot.say(
                     ":no_bell: **This channel doesn't receive notifications from any subreddits.\n"
@@ -502,7 +548,7 @@ class main:
 
     @commands.command(pass_context=True)
     async def getinvite(self, ctx, serverid: str, invlength: int):
-        if not str(ctx.message.author.id) == "146357631760596993":
+        if str(ctx.message.author.id) == "146357631760596993":
             try:
                 invite = str(await self.bot.create_invite(self.bot.get_server(serverid), max_age=invlength))
             except discord.errors.Forbidden:
@@ -516,8 +562,7 @@ class main:
             users = sum([len(r.members) for r in self.bot.servers])
             bots = sum([len([x for x in r.members if x.bot]) for r in self.bot.servers])
             await self.bot.say(
-                "I am in **{}** servers, that overall have **{}** members and **{}** bots.".format(len(self.bot.servers),
-                            ch                                                                       users - bots, bots))
+                "I am in **{}** servers, that overall have **{}** members and **{}** bots.".format(len(self.bot.servers), users - bots, bots))
 
             message = ""
             counter = 0
@@ -527,7 +572,7 @@ class main:
                 for member in server.members:
                     if member.bot:
                         bots += 1
-                message = message + "\n Server id: {}\n Server name: {} \n Members: {} \n Bots: {}\n----------------------------".for(
+                message = message + "\n Server id: {}\n Server name: {} \n Members: {} \n Bots: {}\n----------------------------".format(
                     server.id, server.name, len(server.members) - bots, bots)
 
             r = requests.post("https://pastebin.com/api/api_post.php",
@@ -568,8 +613,22 @@ class main:
                         giflist += "\n-`{}`: {}".format(k, v)
                 if user_perms:
                     giflist += "\n To add more, use `{0}gif [gifname] [gifurl]` or `{0}gif remove [gifname] to remove.`".format(prefix)
-                await self.bot.say(":information_source: **This server has the following gifs:**"
-                                   "{}".format(giflist))
+                if len(giflist) < 1750: #discord limit is 2000
+                    message_to_delete = await self.bot.send_message(ctx.message.channel, ":information_source: **This server has the following gifs:**"
+                                       "{}  \n:alarm_clock: **This message will be deleted in 3 minutes.**".format(giflist))
+                    delayTime = 180
+                else:
+                    r = requests.post("https://pastebin.com/api/api_post.php",
+                                      data={'api_dev_key': tokens["pastebin_api_dev_key"], 'api_option': 'paste',
+                                            'api_paste_code': giflist})
+                    message_to_delete = await self.bot.send_message(ctx.message.channel,
+                                                                    ":information_source: **This server has too many gifs to display, so they are stored in pastebin: {}**"
+                                                                    "\n:alarm_clock: **This message will be deleted in 1 minute.**".format(
+                                                                        r.text))
+                    delayTime = 60
+                await asyncio.sleep(delayTime)
+                await self.bot.delete_message(message_to_delete)
+                await self.bot.delete_message(ctx.message)
 
             elif user_perms:
                 await self.bot.say(
@@ -818,13 +877,14 @@ class main:
             quotes = data_file.readlines()
 
         n = random.randrange(0, len(quotes))
-        desc = "**{}**".format(quotes[n][1:])
+        desc = "**{}**".format(quotes[n])
         em = discord.Embed(description=desc, color=discord.Color.blue())
         em.set_author(name="And for today, quote number {}:".format(n), icon_url="http://i.imgur.com/hBbuHbq.png")
         await self.bot.say(embed=em)
 
     @commands.command(pass_context=True, aliases=['decr'])
     async def decronym(self, ctx, acronym :str=None):
+        """Get the definition of your favorite acronyms!"""
         # Big thanks to /u/OrangeredStilton for his acronym list!
         with open('./decronym.json') as decronymFile:
             decronym = json.load(decronymFile)
