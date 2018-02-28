@@ -14,6 +14,7 @@ import json
 from io import TextIOWrapper
 import sys
 import feedparser
+
 sys.stdout.flush()
 
 f = open("tokens.json", "r")
@@ -37,23 +38,25 @@ db.connect("localhost", 28015, 'spacebot').repl()
 def getprefix(bot, message):
     try:
         return db.table("serverdata").get(message.server.id).get_field("prefix").run()
-    except (db.ReqlNonExistenceError,AttributeError):
+    except (db.ReqlNonExistenceError, AttributeError):
         return '?'
+
 
 SHORTCUTS = {"VirginGalactic": "VG", "Roscosmos": "RFSA", "SpaceX": "SpX", "OrbitalATK": "ATK",
              "BlueOrigin": "BO", "RocketLab": "RL", "CloudAerospace": "CA", "VectorSpaceSystems": "Vector",
-             "SierraNevadaCorp" : "SNC", "CopenhagenSuborbitals" : "Copsub", "StratolaunchSystems": "Stratolaunch"}
-
+             "SierraNevadaCorp": "SNC", "CopenhagenSuborbitals": "Copsub", "StratolaunchSystems": "Stratolaunch"}
 
 description = '''A bot made by @Cakeofdestiny:2318 for space-related info, launch timings, tweets, and reddit posts.'''
 
 bot = commands.Bot(command_prefix=getprefix, description=description)
+
 
 # bot.remove_command("help")
 
 
 class main:
     def __init__(self, bot):
+
         self.server = discord.server
         self.newprefix = None
         self.bot = bot
@@ -92,8 +95,8 @@ class main:
         for r in range(len(message.content)):
             try:
                 if message.content[r:r + 10] == "¯\_(ツ)_/¯" and str(
-                   message.server.id) == "153646955464097792" and not message.author.permissions_in(
-                   message.channel).manage_channels:
+                        message.server.id) == "153646955464097792" and not message.author.permissions_in(
+                    message.channel).manage_channels:
                     msgtodelete = await self.bot.send_message(message.channel, "\U0001F6D1 **No shrugs!**")
                     await self.bot.delete_message(message)
                     await asyncio.sleep(5)
@@ -125,7 +128,7 @@ class main:
                                                 ":outbox_tray:** {0.name} has left this server.**\n He joined at {0.joined_at}."
                                                 .format(member))
 
-        except:
+        except discord.Forbidden:
             pass
 
     async def on_command_error(self, error, ctx):
@@ -147,6 +150,7 @@ class main:
                 raise error
 
             await self.bot.send_message(ctx.message.channel, embed=em)
+
     """
     @commands.command(pass_context=True)
     async def help(self, ctx, specific: str = None):
@@ -184,12 +188,11 @@ class main:
                                          data=json.dumps(thepostdata)) as resp:
                 pass
 
-
-            #header = {
+            # header = {
             #    'Authorization': tokens["discordbots_token"],
             #    'Content-Type': 'application/json'}
 
-            #async with self.session.post('https://discordbots.org/api/bots/291185373860855808/stats', headers=header,
+            # async with self.session.post('https://discordbots.org/api/bots/291185373860855808/stats', headers=header,
             #                             data=json.dumps(thepostdata)) as resp:
             #    pass
 
@@ -200,7 +203,8 @@ class main:
             async with self.session.get(url) as response:
                 return response
 
-    def gettimeto(self, timestamp: int):
+    @staticmethod
+    def get_time_to(timestamp: int):
         if timestamp == 0:
             return "TBD"
 
@@ -210,12 +214,11 @@ class main:
 
         td = td.total_seconds()
 
-        ttime = {"days": 0, "hours": 0, "minutes": 0}
-        ttime["days"] = int(td/86400)
+        ttime = {"days": int(td / 86400), "hours": 0, "minutes": 0}
         td = td % 86400
-        ttime["hours"] = int(td/3600)
+        ttime["hours"] = int(td / 3600)
         td = td % 3600
-        ttime["minutes"] = int(td/60)
+        ttime["minutes"] = int(td / 60)
 
         return ttime
 
@@ -280,7 +283,7 @@ class main:
         """Repeat a message."""
         if not message:
             return
-        
+
         await self.bot.delete_message(ctx.message)
         em = discord.Embed(description=message, color=discord.Colour.dark_blue())
         await self.bot.say(embed=em)
@@ -290,7 +293,9 @@ class main:
     async def purge(self, ctx, *, amount: str = None):
         """Purge a certain amount of messages from the chat"""
         if not amount:
-            await self.bot.say("Usage : *{}purge [messages]* \n Messages has to be below 100 (except easter eggs).".format(getprefix(self.bot,ctx.message)))
+            await self.bot.say(
+                "Usage : *{}purge [messages]* \n Messages has to be below 100 (except easter eggs).".format(
+                    getprefix(self.bot, ctx.message)))
             return
         if amount.isdigit():
             if int(amount) > 100:
@@ -304,7 +309,6 @@ class main:
         else:
             await self.bot.delete_message(ctx.message)
             await self.bot.say("**I WILL DESTROY {}** :boom: :boom:".format(amount.upper()))
-
 
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, no_pm=True, aliases=['wm'])
@@ -364,7 +368,6 @@ class main:
         channel_rss_subs = []
         complete_rss_db = db.table("subdata").get("rss").run()
 
-
         channel_id = ctx.message.channel.id
 
         if complete_rss_db is None:
@@ -379,11 +382,11 @@ class main:
         prefix = getprefix(self.bot, ctx.message)
 
         if not rss_link:
-            if len(channel_rss_subs) > 0 :
+            if len(channel_rss_subs) > 0:
                 await self.bot.say(
                     ":bell: **This channel is subscribed to the following RSS feeds: \n`{}`"
                     "\n\n Use `{}rss [RSS feed link] ` to add or remove feeds.**".format(
-                    "\n".join(channel_rss_subs), prefix))
+                        "\n".join(channel_rss_subs), prefix))
             else:
                 await self.bot.say(
                     ":no_bell: **This channel isn't subscribed to any RSS feeds.\n"
@@ -413,7 +416,7 @@ class main:
             sub_list.append(channel_id)
             await self.bot.say(":bell: **This channel will be notified of new posts from `{}`**".format(rss_link))
 
-        db.table("subdata").insert({"id": "rss", rss_link:sub_list}, conflict="update").run()
+        db.table("subdata").insert({"id": "rss", rss_link: sub_list}, conflict="update").run()
 
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, aliases=['twitter'])
@@ -436,11 +439,11 @@ class main:
         prefix = getprefix(self.bot, ctx.message)
 
         if not subname:
-            if len(channel_twitter_subs) > 0 :
+            if len(channel_twitter_subs) > 0:
                 await self.bot.say(
                     ":bell: **This channel receives Twitter notifications from: `@{}.`"
                     "\n\n Use `{}twitter [Twitter Username]` to add more.**".format(
-                    ", @".join(channel_twitter_subs), prefix))
+                        ", @".join(channel_twitter_subs), prefix))
             else:
                 await self.bot.say(
                     ":no_bell: **This channel doesn't receive notifications from any subreddits.\n"
@@ -469,7 +472,7 @@ class main:
             sublist.append(ctx.message.channel.id)
             await self.bot.say(":bell: **This channel will be notified of new tweets from `@{}`**".format(subname))
 
-        db.table("subdata").insert({"id": "twitter", subname:sublist}, conflict="update").run()
+        db.table("subdata").insert({"id": "twitter", subname: sublist}, conflict="update").run()
 
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, aliases=['reddit'])
@@ -496,11 +499,11 @@ class main:
         prefix = getprefix(self.bot, ctx.message)
 
         if not subname:
-            if len(channel_reddit_subs) > 0 :
+            if len(channel_reddit_subs) > 0:
                 await self.bot.say(
                     ":bell: **This channel receives reddit notifications from: `{}.`"
                     "\n\n Use `{}reddit [subreddit name]` to add more.**".format(
-                     ", ".join(channel_reddit_subs), prefix))
+                        ", ".join(channel_reddit_subs), prefix))
             else:
                 await self.bot.say(
                     ":no_bell: **This channel doesn't receive notifications from any subreddits.\n"
@@ -509,7 +512,6 @@ class main:
             return
 
         subname = subname.lower()
-        channelid = ctx.message.channel.id
 
         if subname[0:1] == "/":
             subname = subname[1:]
@@ -562,7 +564,8 @@ class main:
             users = sum([len(r.members) for r in self.bot.servers])
             bots = sum([len([x for x in r.members if x.bot]) for r in self.bot.servers])
             await self.bot.say(
-                "I am in **{}** servers, that overall have **{}** members and **{}** bots.".format(len(self.bot.servers), users - bots, bots))
+                "I am in **{}** servers, that overall have **{}** members and **{}** bots.".format(
+                    len(self.bot.servers), users - bots, bots))
 
             message = ""
             counter = 0
@@ -581,7 +584,7 @@ class main:
 
             await self.bot.say("Pastebin data here: {}".format(r.text))
 
-    @commands.command(pass_context=True, no_pm=True, aliases=["gifs","graphicsinterchangeformat"])
+    @commands.command(pass_context=True, no_pm=True, aliases=["gifs", "graphicsinterchangeformat"])
     async def gif(self, ctx, gifname: str = None, *, gifmessage: str = None):
         """Allows the user to set custom response gifs with the bot."""
         prefix = getprefix(self.bot, ctx.message)
@@ -598,7 +601,8 @@ class main:
                         ":information_source: **This server has no custom gifs. \n\nTo set some, use `{}gif "
                         "[gifname] [gifurl]`**".format(prefix))
                 else:
-                    await self.bot.say(":information_source: **This server has no custom gifs.\n Ask your admins to set some.**")
+                    await self.bot.say(
+                        ":information_source: **This server has no custom gifs.\n Ask your admins to set some.**")
                 return
 
         # If they didn't request any gifs, display the list.
@@ -608,15 +612,18 @@ class main:
                 # This code gets a list of gifs, and encapsulates only the url part of the gif in non-embed carets for discord.
                 for k, v in gifs.items():
                     if v.find("http") != -1:
-                        giflist += "\n-`{}`: {}<{}>".format(k, v[0:v.find("http")],v[v.find("http"):])
+                        giflist += "\n-`{}`: {}<{}>".format(k, v[0:v.find("http")], v[v.find("http"):])
                     else:
                         giflist += "\n-`{}`: {}".format(k, v)
                 if user_perms:
-                    giflist += "\n To add more, use `{0}gif [gifname] [gifurl]` or `{0}gif remove [gifname] to remove.`".format(prefix)
-                if len(giflist) < 1750: #discord limit is 2000
-                    message_to_delete = await self.bot.send_message(ctx.message.channel, ":information_source: **This server has the following gifs:**"
-                                       "{}  \n:alarm_clock: **This message will be deleted in 3 minutes.**".format(giflist))
-                    delayTime = 180
+                    giflist += "\n To add more, use `{0}gif [gifname] [gifurl]` or `{0}gif remove [gifname] to remove.`".format(
+                        prefix)
+                if len(giflist) < 1750:  # discord limit is 2000
+                    message_to_delete = await self.bot.send_message(ctx.message.channel,
+                                                                    ":information_source: **This server has the following gifs:**"
+                                                                    "{}  \n:alarm_clock: **This message will be deleted in 3 minutes.**".format(
+                                                                        giflist))
+                    delay_time = 180
                 else:
                     r = requests.post("https://pastebin.com/api/api_post.php",
                                       data={'api_dev_key': tokens["pastebin_api_dev_key"], 'api_option': 'paste',
@@ -625,8 +632,8 @@ class main:
                                                                     ":information_source: **This server has too many gifs to display, so they are stored in pastebin: {}**"
                                                                     "\n:alarm_clock: **This message will be deleted in 1 minute.**".format(
                                                                         r.text))
-                    delayTime = 60
-                await asyncio.sleep(delayTime)
+                    delay_time = 60
+                await asyncio.sleep(delay_time)
                 await self.bot.delete_message(message_to_delete)
                 await self.bot.delete_message(ctx.message)
 
@@ -648,7 +655,8 @@ class main:
                 del gifs[gifmessage]
                 await self.bot.say("🚮 Removed `{}`.".format(gifmessage))
             else:
-                await self.bot.say(":x: `{}` isn't a gif in this server. Could you have misspelled it?".format(gifmessage))
+                await self.bot.say(
+                    ":x: `{}` isn't a gif in this server. Could you have misspelled it?".format(gifmessage))
         else:
             gifs[gifname] = gifmessage
             await self.bot.say(":white_check_mark: Set `{}` to `{}`.".format(gifname, gifmessage))
@@ -665,7 +673,8 @@ class main:
 
     @commands.command(pass_context=True)
     async def fh(self, ctx):
-        time_to_launch = self.gettimeto(1517949900)
+        # launch_time = 00000
+        # time_to_launch = self.get_time_to(launch_time)
 
         fullmessage = "Vehicle: __**Falcon Heavy**__ | Payload: __**Elon's Midnight Cherry Roadster**__"
 
@@ -675,12 +684,12 @@ class main:
 
         fullmessage += "\n"
 
-        #if time_to_launch["days"] != 1:
+        # if time_to_launch["days"] != 1:
         #    fullmessage += "**In {} days,".format(time_to_launch["days"])
-        #else:
+        # else:
         #    fullmessage += "**In 1 day,"
 
-        #fullmessage += " {} hours, and {} minutes.**".format(time_to_launch["hours"], time_to_launch["minutes"])
+        # fullmessage += " {} hours, and {} minutes.**".format(time_to_launch["hours"], time_to_launch["minutes"])
 
         # We check if there is an available live stream.
         fullmessage += "\n**[Recording available!](https://www.youtube.com/watch?v=wbSwFU6tY1c)**"
@@ -688,7 +697,8 @@ class main:
         fullmessage += "\n**Thanks to everyone who joined us. We hope to see you on the next launches!**"
 
         em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
-        em.set_thumbnail(url="https://cdn.teslarati.com/wp-content/uploads/2017/12/Roadster-and-Falcon-Heavy-Elon-Musk-2-e1513972707360.jpg")
+        em.set_thumbnail(
+            url="https://cdn.teslarati.com/wp-content/uploads/2017/12/Roadster-and-Falcon-Heavy-Elon-Musk-2-e1513972707360.jpg")
         em.set_author(name="Falcon Heavy:",
                       icon_url="https://mk0spaceflightnoa02a.kinstacdn.com/wp-content/uploads/2017/01/C1pzAfrWEAIi7RU.png")
         await self.bot.send_message(ctx.message.channel, embed=em)
@@ -702,7 +712,7 @@ class main:
         agency_list = [r.lower() for r in agency_list]
 
         agency_roles = []
-        reverse_shortcuts = {v.lower():k.lower() for k, v in SHORTCUTS.items()}
+        reverse_shortcuts = {v.lower(): k.lower() for k, v in SHORTCUTS.items()}
         for r in ctx.message.server.roles:
             for j in agency_list:
                 if j == r.name.lower()[:-7] or reverse_shortcuts.get(j, "invalid") == r.name.lower()[:-7]:
@@ -719,12 +729,13 @@ class main:
             # Handling shortcuts
             role_list = [(r + " - **" + SHORTCUTS.get(r, r)) + "**" for r in role_list]
 
-            await self.bot.say(":information_source: **This agency does not exist. \n Usage: `{}notifyme [agency] [agency] [agency]...`\n __Available agencies__**: "
-                               "\n **All - All launch updates and agency updates.**"
-                               "\n **Launch - All launch updates.**\n"
-                               "\n*{}* "
-                               "\n `lowercase` works too."
-                               .format(getprefix(bot, ctx.message), "\n".join(role_list)))
+            await self.bot.say(
+                ":information_source: **This agency does not exist. \n Usage: `{}notifyme [agency] [agency] [agency]...`\n __Available agencies__**: "
+                "\n **All - All launch updates and agency updates.**"
+                "\n **Launch - All launch updates.**\n"
+                "\n*{}* "
+                "\n `lowercase` works too."
+                .format(getprefix(bot, ctx.message), "\n".join(role_list)))
             return
 
         member = ctx.message.author
@@ -734,7 +745,7 @@ class main:
         try:
             for r in agency_roles:
                 # Checks if it has been added or removed
-                toggle =  await self.toggle_notify(r, member)
+                toggle = await self.toggle_notify(r, member)
                 if toggle:
                     added_roles.append(r.name[:-7])
                 else:
@@ -749,13 +760,15 @@ class main:
             if len(added_roles) == 1 and added_roles[0] == "Launch":
                 message += ":bell: You will be `@mentioned on launches.` \n\n**You can sign up for more frequent and diverse updates using `.notifyme all`, or for updates for specific agencies only - use `.notifyme ?` to display full list.**\n"
             else:
-                message += ":bell: **You will be `@mentioned` on launches, launch updates, news and events related to `{}`.**\n".format(", ".join(added_roles))
+                message += ":bell: **You will be `@mentioned` on launches, launch updates, news and events related to `{}`.**\n".format(
+                    ", ".join(added_roles))
 
         if len(removed_roles) > 0:
             if len(removed_roles) == 1 and removed_roles[0] == "Launch":
                 message += ":no_bell: **You will no longer be `@mentioned` on launches or launch updates.**\n"
             else:
-                message += ":no_bell: **You will no longer be `@mentioned` on launches, launch updates, news and events related to `{}`.**\n".format(", ".join(removed_roles))
+                message += ":no_bell: **You will no longer be `@mentioned` on launches, launch updates, news and events related to `{}`.**\n".format(
+                    ", ".join(removed_roles))
 
         if len(removed_roles) + len(added_roles) < len(agency_list):
             removed = len(agency_list) - (len(removed_roles) + len(added_roles))
@@ -785,7 +798,8 @@ class main:
         """Get information on the next launch."""
         launch_info = await self.get_launch_data()
         if len(launch_info) == 0:
-            await self.bot.say(":( Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
+            await self.bot.say(
+                ":( Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
             return
         nldata = None
         for r in launch_info:
@@ -797,10 +811,11 @@ class main:
                 break
 
         if not nldata:
-            await self.bot.say(":rocket: Currently there are 0 listed launches with accurate dates. Check back soon :alarm_clock: !")
+            await self.bot.say(
+                ":rocket: Currently there are 0 listed launches with accurate dates. Check back soon :alarm_clock: !")
             return
 
-        time_to_launch = self.gettimeto(nldata["wsstamp"])
+        time_to_launch = self.get_time_to(nldata["wsstamp"])
 
         fullmessage = "Vehicle: __**{0[0]}**__| Payload: __**{0[1]}**__".format(nldata["name"].split('|'))
 
@@ -815,7 +830,7 @@ class main:
             fullmessage += "Pad: __**{}**__".format(launchsite)
         except KeyError:
             pass
-        fullmessage += "\n\n" # We print those here to make sure it newlines twice
+        fullmessage += "\n\n"  # We print those here to make sure it newlines twice
 
         if time_to_launch["days"] != 1:
             fullmessage += "**In {} days,".format(time_to_launch["days"])
@@ -843,7 +858,8 @@ class main:
 
         launch_info = await self.get_launch_data()
         if len(launch_info) == 0:
-            await self.bot.say(":( Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
+            await self.bot.say(
+                ":( Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
             return
 
         fullmessage = ""
@@ -883,13 +899,14 @@ class main:
         await self.bot.say(embed=em)
 
     @commands.command(pass_context=True, aliases=['decr'])
-    async def decronym(self, ctx, acronym :str=None):
+    async def decronym(self, ctx, acronym: str = None):
         """Get the definition of your favorite acronyms!"""
         # Big thanks to /u/OrangeredStilton for his acronym list!
         with open('./decronym.json') as decronymFile:
             decronym = json.load(decronymFile)
         if not acronym:
-            await self.bot.say(":x: **Invalid Syntax!** \n Correct usage: `{}decronym/decr [acronym]`".format(getprefix(self.bot, ctx.message)))
+            await self.bot.say(":x: **Invalid Syntax!** \n Correct usage: `{}decronym/decr [acronym]`".format(
+                getprefix(self.bot, ctx.message)))
             return
 
         matching_values = [value for key, value in decronym.items() if key.upper() == acronym.upper()]
@@ -898,17 +915,18 @@ class main:
             return
 
         matching_values = matching_values[0]
-        acronym_message = "\n".join(["{}. **{}**".format(i+1, matching_values[i]) for i in range(len(matching_values))])
-        if(len(matching_values) == 1):
+        acronym_message = "\n".join(
+            ["{}. **{}**".format(i + 1, matching_values[i]) for i in range(len(matching_values))])
+        if len(matching_values) == 1:
             em = discord.Embed(description=acronym_message,
                                title="I found 1 definition for the acronym **{}**:".format(acronym.upper()),
                                color=discord.Color.blue())
         else:
             em = discord.Embed(description=acronym_message,
-                               title="I found {} definitions for the acronym **{}**:".format(len(matching_values), acronym.upper()),
+                               title="I found {} definitions for the acronym **{}**:".format(len(matching_values),
+                                                                                             acronym.upper()),
                                color=discord.Color.blue())
         await self.bot.say(embed=em)
-
 
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, no_pm=True)
