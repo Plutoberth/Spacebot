@@ -46,7 +46,7 @@ SHORTCUTS = {"VirginGalactic": "VG", "Roscosmos": "RFSA", "SpaceX": "SpX", "Orbi
              "BlueOrigin": "BO", "RocketLab": "RL", "CloudAerospace": "CA", "VectorSpaceSystems": "Vector",
              "SierraNevadaCorp": "SNC", "CopenhagenSuborbitals": "Copsub", "StratolaunchSystems": "Stratolaunch"}
 
-description = '''A bot made by @Cakeofdestiny:2318 for space-related info, launch timings, tweets, and reddit posts.'''
+description = '''A bot made by @Cakeofdestiny#2318 for space-related info, launch timings, tweets, and reddit posts.'''
 
 bot = commands.Bot(command_prefix=getprefix, description=description)
 
@@ -119,14 +119,17 @@ class main:
         try:
 
             if int(member.server.id) == 316186751565824001:
+                memberTime = member.joined_at
+                diffTime = datetime.now() - memberTime
+
                 if member.nick:
-                    await self.bot.send_message(self.bot.get_channel(316188105528836099),
-                                                ":outbox_tray:** {0.name}, AKA {0.nick} has left this server.**\n He joined at {0.joined_at}."
-                                                .format(member))
+                    await self.bot.send_message(self.bot.get_channel("316188105528836099"),
+                                                ":outbox_tray:** `{0.name}#{0.discriminator}` (ID: `{0.id}`), AKA `{0.nick}` has left this server.**\n He joined at `{1.day}.{1.month}.{1.year}, on {1.hour}:{1.minute}`. That was `{2.day}` days ago."
+                                                .format(member, memberTime, diffTime))
                 else:
-                    await self.bot.send_message(self.bot.get_channel(316188105528836099),
-                                                ":outbox_tray:** {0.name} has left this server.**\n He joined at {0.joined_at}."
-                                                .format(member))
+                    await self.bot.send_message(self.bot.get_channel("316188105528836099"),
+                                                ":outbox_tray:** `{0.name}#{0.discriminator}` (ID: `{0.id}`) has left this server.**\n He joined at `{1.day}.{1.month}.{1.year}, on {1.hour}:{1.minute}`. That was `{2.days}` days ago."
+                                                .format(member, memberTime, diffTime))
 
         except discord.Forbidden:
             pass
