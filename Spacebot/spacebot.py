@@ -664,7 +664,7 @@ class main:
             gifs[gifname] = gifmessage
             await self.bot.say(":white_check_mark: Set `{}` to `{}`.".format(gifname, gifmessage))
 
-        db.table('serverdata').insert({"id": ctx.message.server.id, "gifs": gifs}, conflict="replace").run()
+        db.table('serverdata').insert({"id": ctx.message.server.id, "gifs": gifs}, conflict="update").run()
 
     async def toggle_notify(self, notify_role, member):
         if notify_role in member.roles:
