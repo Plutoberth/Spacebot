@@ -86,7 +86,7 @@ class RedditContent:
                 redditlp[s] = post.created_utc
                 fullmessage = ""
                 # -Construct Embed
-                em = await self.construct_embed(post,fullmessage,s)
+                em = self.construct_embed(post,fullmessage,s)
                 for channel in v:
 
                     try:
@@ -102,11 +102,10 @@ class RedditContent:
                     else:
                         try:
                             await self.bot.send_message(channel_object, embed=em)
-                        except Exception as e:
-                            print(
-                                "reddit post embed, exception {}! Details below for debugging: \n\n channel: {}\n post: {}\n".format(
-                                    e, channel, post.shortlink))
-                            continue
+                        except discord.Forbidde as e:
+                            print("Forbidden in RedditContent - sending message! e: {} \n channel: {} \n post:"
+                                  .format(e, channel, post.shortlink))
+                            pass
 
             redditlp["id"] = "redditlp"
             subdb["id"] = "reddit"
@@ -116,7 +115,7 @@ class RedditContent:
             await asyncio.sleep(60)
 
 
-    async def construct_embed(self, post, fullmessage, subreddit):
+    def construct_embed(self, post, fullmessage, subreddit):
         if len(post.title) > 225:
             title = "[{}]({})".format(post.title, post.shortlink)
             em = discord.Embed(description=fullmessage, title=title, color=discord.Color.blue())

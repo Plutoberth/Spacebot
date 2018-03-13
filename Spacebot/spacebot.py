@@ -402,7 +402,7 @@ class main:
         feed = feedparser.parse(rss_link)
         rss_link = rss_link.lower()
 
-        if len(feed['feed']) == 0:
+        if len(feed['entries']) == 0:
             await self.bot.say("❌ **This feed doesn't exist, or it is unreachable.**")
             return
 
@@ -802,7 +802,7 @@ class main:
         launch_info = await self.get_launch_data()
         if len(launch_info) == 0:
             await self.bot.say(
-                ":( Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
+                ":x: Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
             return
         nldata = None
         for r in launch_info:
@@ -954,6 +954,6 @@ class main:
 bot.add_cog(main(bot))
 bot.load_extension("redditcontent")
 bot.load_extension("twittercontent")
-# bot.load_extension("rsscontent")
+bot.load_extension("rsscontent")
 
 bot.run(tokens["bot_token"])

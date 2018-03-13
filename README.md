@@ -13,6 +13,9 @@ Get notified about new posts from any subreddit in any selected channel.
 #### ?twitter {@handle}:
 Get notified about new tweets from any user in any selected channel.
 
+#### ?rss {feed link}:
+Get notified about new posts on your favorite RSS feeds, in any selected channel.
+
 #### ?nl (nextlaunch):
 Get info about the next space launch, with an accurate UTC countdown.
 
@@ -45,9 +48,10 @@ Thanks to the decronym.xyz project and /u/OrangeredStilton for the list!
 ####?purge [amount]
 Mod command. Purge (delete) that amount of messages from the chat.
 
+
+
 ## Under development:
 
-#### -RSS List notifications
 
 #### -A feature that will allow you to be @mentioned at any launch by chosen launch providers.
 

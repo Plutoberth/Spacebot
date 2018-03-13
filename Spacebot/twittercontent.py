@@ -28,12 +28,12 @@ db.connect("localhost", 28015, 'spacebot').repl()
 class TwitterContent:
     def __init__(self, bot):
         self.bot = bot
-        self.twitter_icon = "http://icons.iconarchive.com/icons/uiconstock/socialmedia/512/Twitter-icon.png"
+        self.TWITTER_ICON = "http://icons.iconarchive.com/icons/uiconstock/socialmedia/512/Twitter-icon.png"
 
     async def on_ready(self):
         self.bot.loop.create_task(self.twitter_content())
 
-    async def delete_account(self, twitter_account):
+    def delete_account(self, twitter_account):
         db.table("subdata").insert({"id":"twitter", twitter_account:[]}, conflict="update").run()
 
     async def twitter_content(self):
@@ -43,7 +43,8 @@ class TwitterContent:
                 twittersubs = db.table("subdata").get("twitter").run()
             except db.ReqlNonExistenceError:
                 print("Fatal error, rethinkdb table inaccessible.")
-                pass
+                await asyncio.sleep(60)
+                continue
 
             twitterlp = db.table("subdata").get("twitterlp").run()
 
@@ -59,7 +60,7 @@ class TwitterContent:
                     if len(lasttweets) > 0:
                         lasttweet = lasttweets[0]
                     else:
-                        await self.delete_account(sub)
+                        self.delete_account(sub)
 
                 except (twitter.error.TwitterError, asyncio.TimeoutError) as e:
                     print("Error in twittercontent - getting last tweet! e: {} sub:{}".format(e, sub))
@@ -67,7 +68,7 @@ class TwitterContent:
                     try:
                         twitterapi.GetUserTimeline(screen_name=sub, count=1)
                     except twitter.error.TwitterError:
-                        await self.delete_account(sub)
+                        self.delete_account(sub)
                         print("{} removed".format(sub))
                     continue
 
@@ -77,7 +78,7 @@ class TwitterContent:
 
                 db.table("subdata").insert({"id": "twitterlp", sub: lasttweet.full_text}, conflict="update").run()
 
-                em = await self.construct_embed(lasttweet, sub)
+                em = self.construct_embed(lasttweet, sub)
 
                 for channel in channels[:]:
                     # first we check if we have access to the channel.
@@ -93,8 +94,8 @@ class TwitterContent:
                         continue
                     try:
                         await self.bot.send_message(channel_object, embed=em)
-                    except Exception as e:
-                        print("Error in twittercontent - sending message! e: {}".format(e))
+                    except discord.Forbidden as e:
+                        print("Forbidden in TwitterContent - sending message! e: {}".format(e))
                         pass
 
                 # commit the possible channel changes
@@ -102,7 +103,7 @@ class TwitterContent:
 
             await asyncio.sleep(60)
 
-    async def construct_embed(self, tweet, sub):
+    def construct_embed(self, tweet, sub):
 
         em = discord.Embed(
             description="{} \n\n [Tweet Link](https://twitter.com/{}/status/{})".format(tweet.full_text,
@@ -111,7 +112,7 @@ class TwitterContent:
 
         em.set_author(name="New tweet by {}".format(tweet.user.name), icon_url=tweet.user.profile_image_url)
 
-        em.set_footer(text="Twitter - @{}".format(tweet.user.screen_name), icon_url=self.twitter_icon)
+        em.set_footer(text="Twitter - @{}".format(tweet.user.screen_name), icon_url=self.TWITTER_ICON)
         if tweet.media is not None and len(tweet.media) > 0:
             if hasattr(tweet.media[0], 'media_url'):
                 em.set_image(url=tweet.media[0].media_url)
