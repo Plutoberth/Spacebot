@@ -3,6 +3,7 @@ import discord
 import asyncio
 from io import TextIOWrapper
 import sys
+import aiohttp
 import praw
 import json
 
@@ -33,81 +34,87 @@ class RedditContent:
     async def on_ready(self):
         self.bot.loop.create_task(self.reddit_content())
 
+
     async def reddit_content(self):
         while not self.bot.is_closed:
-            try:
-                reddit = praw.Reddit(client_id=tokens["client_id"], client_secret=tokens["client_secret"],
-                                     user_agent='PythonLinux:Spacebot:v1.2.3 (by /u/Cakeofdestiny)')
 
-                subdb = db.table("subdata").get("reddit").run()
+            reddit = praw.Reddit(client_id=tokens["client_id"], client_secret=tokens["client_secret"],
+                                 user_agent='PythonLinux:Spacebot:v1.2.3 (by /u/Cakeofdestiny)')
 
-                redditlp = db.table("subdata").get("redditlp").run()
+            subdb = db.table("subdata").get("reddit").run()
+
+            redditlp = db.table("subdata").get("redditlp").run()
 
 
-                if not redditlp:
-                    redditlp = {}
+            if not redditlp:
+                redditlp = {}
 
-                # loop through all subs
-                for s, v in dict(subdb).items():
-                    if s == "id":
-                        continue
-                    # if sub has zero members delete it
-                    if v is not None:
-                        if len(v) == 0:
-                            subdb.pop(s, None)
-                            continue
-                    else:
+
+            # loop through all subs
+            for s, v in dict(subdb).items():
+                if s == "id":
+                    continue
+                # if sub has zero members delete it
+                if v is not None:
+                    if len(v) == 0:
                         subdb.pop(s, None)
                         continue
-                    # if sub not in lp set lp 0
-                    if s not in redditlp:
-                        redditlp[s] = 1500000000.0
-                    try:
-                        post = reddit.subreddit(s).new(limit=1).next()
-                    except Exception as e:
+                else:
+                    subdb.pop(s, None)
+                    continue
+
+                # if sub not in lp set lp 0
+                if s not in redditlp:
+                    redditlp[s] = 1500000000.0
+                try:
+                    post = reddit.subreddit(s).new(limit=1).next()
+                except Exception as e:
+                    if str(e) == "Redirect to /subreddits/search":
+                        print("Removing sub {}".format(s))
+                        subdb.pop(s, None)
+                    else:
                         print("exception in getting post! e: {} \n s: {}".format(e, s))
                         asyncio.sleep(30)
-                        continue
-                    if not post:
-                        subdb.pop(s, None)
-                        continue
-                    #if post is older or the same than the lp continue
-                    if redditlp[s] >= post.created_utc:
-                        continue
-                    #set lp to current time
-                    redditlp[s] = post.created_utc
-                    fullmessage = ""
-                    # -Construct Embed
-                    em = await self.construct_embed(post,fullmessage,s)
-                    for channel in v:
+                    continue
+                if not post:
+                    subdb.pop(s, None)
+                    continue
+                #if post is older or the same than the lp continue
+                if redditlp[s] >= post.created_utc:
+                    continue
+                #set lp to current time
+                redditlp[s] = post.created_utc
+                fullmessage = ""
+                # -Construct Embed
+                em = await self.construct_embed(post,fullmessage,s)
+                for channel in v:
 
+                    try:
+                        channel_object = self.bot.get_channel(channel)
+                    except Exception as e:
+                        print(
+                            "reddit get channel, exception {}! Details below for debugging: \n\n channel: {}\n post: {}\n".format(
+                                e, channel, post.shortlink))
+                        subdb[s] = v.remove(channel)
+                        continue
+                    if not channel_object:
+                        subdb[s] = v.remove(channel)
+                    else:
                         try:
-                            channel_object = self.bot.get_channel(channel)
+                            await self.bot.send_message(channel_object, embed=em)
                         except Exception as e:
                             print(
-                                "reddit get channel, exception {}! Details below for debugging: \n\n channel: {}\n post: {}\n".format(
+                                "reddit post embed, exception {}! Details below for debugging: \n\n channel: {}\n post: {}\n".format(
                                     e, channel, post.shortlink))
-                            subdb[s] = v.remove(channel)
                             continue
-                        if not channel_object:
-                            subdb[s] = v.remove(channel)
-                        else:
-                            try:
-                                await self.bot.send_message(channel_object, embed=em)
-                            except Exception as e:
-                                print(
-                                    "reddit post embed, exception {}! Details below for debugging: \n\n channel: {}\n post: {}\n".format(
-                                        e, channel, post.shortlink))
-                                continue
-                       
-                redditlp["id"] = "redditlp"
-                subdb["id"] = "reddit"
 
-                db.table("subdata").insert(subdb, conflict="replace").run()
-                db.table("subdata").insert(redditlp, conflict="replace").run()
-                await asyncio.sleep(60)
-            except Exception as e:
-                print("exception in the entire reddit loop! e: {}".format(e))
+            redditlp["id"] = "redditlp"
+            subdb["id"] = "reddit"
+
+            db.table("subdata").insert(subdb, conflict="replace").run()
+            db.table("subdata").insert(redditlp, conflict="replace").run()
+            await asyncio.sleep(60)
+
 
     async def construct_embed(self, post, fullmessage, subreddit):
         if len(post.title) > 225:
