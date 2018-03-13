@@ -33,6 +33,9 @@ class TwitterContent:
     async def on_ready(self):
         self.bot.loop.create_task(self.twitter_content())
 
+    async def delete_account(self, twitter_account):
+        db.table("subdata").insert({"id":"twitter", twitter_account:[]}, conflict="update").run()
+
     async def twitter_content(self):
         while not self.bot.is_closed:
             twittersubs = {}
@@ -42,7 +45,6 @@ class TwitterContent:
                 print("Fatal error, rethinkdb table inaccessible.")
                 pass
 
-            twitterlp = {}
             twitterlp = db.table("subdata").get("twitterlp").run()
 
             for sub, channels in twittersubs.items():
@@ -53,34 +55,31 @@ class TwitterContent:
                 if len(channels) == 0:
                     continue
                 try:
-                    lasttweet = twitterapi.GetUserTimeline(screen_name=sub, count=1, include_rts=False, exclude_replies=True)[0]
+                    lasttweets = twitterapi.GetUserTimeline(screen_name=sub, count=1, include_rts=False, exclude_replies=True)
+                    if len(lasttweets) > 0:
+                        lasttweet = lasttweets[0]
+                    else:
+                        await self.delete_account(sub)
 
-                except (IndexError, twitter.error.TwitterError, asyncio.TimeoutError) as e:
+                except (twitter.error.TwitterError, asyncio.TimeoutError) as e:
                     print("Error in twittercontent - getting last tweet! e: {} sub:{}".format(e, sub))
                     # if it failed, we check if it even exists, if it doesn't we remove it
                     try:
                         twitterapi.GetUserTimeline(screen_name=sub, count=1)
                     except twitter.error.TwitterError:
-                        # We can just insert an empty list for easy removal.
-                        db.table("subdata").insert({"id": "twitter", sub: []}, conflict="update").run()
+                        await self.delete_account(sub)
                         print("{} removed".format(sub))
-                        return
-                    await asyncio.sleep(60)
                     continue
 
                 if sub in twitterlp:
                     if lasttweet.full_text == twitterlp[sub]:
-                        # print("lasttweet: {} twitterlp: {}".format(lasttweet.full_text, twitterlp[sub]))
-                        # print("skipped cause of twitterlp dupe")
-                        # way too many messages
                         continue
 
                 db.table("subdata").insert({"id": "twitterlp", sub: lasttweet.full_text}, conflict="update").run()
 
                 em = await self.construct_embed(lasttweet, sub)
-                # incase we do any changes
-                fullchannels = channels
-                for channel in fullchannels:
+
+                for channel in channels[:]:
                     # first we check if we have access to the channel.
                     channel_object = self.bot.get_channel(channel)
                     if channel_object is None:
