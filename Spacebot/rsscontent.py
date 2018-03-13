@@ -32,13 +32,15 @@ class RSSContent:
         self.bot.loop.create_task(self.rss_content())
 
     async def fetch(self, url):
-        with async_timeout.timeout(10):
+        with async_timeout.timeout(90):
             async with self.session.get(url) as response:
-                return response
+                try:
+                    return await response.text()
+                except:
+                    print("url", url)
 
     async def get_rss_feed(self, rss_link):
         feed_string = await self.fetch(rss_link)
-        feed_string = await feed_string.text()
         feed = feedparser.parse(feed_string)
         return feed
 
@@ -110,7 +112,7 @@ class RSSContent:
 
     def construct_embed(self, feed_data, entry, rss_link):
 
-        summary_without_html = self.html_pattern.sub('', entry['summary'])
+        summary_without_html = self.html_pattern.sub('', entry['title'])
 
         em = discord.Embed(
             description="{} \n\n [Link]({})".format(summary_without_html,entry['link']), color=discord.Color.blue())
