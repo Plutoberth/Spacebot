@@ -102,7 +102,7 @@ class RedditContent:
                     else:
                         try:
                             await self.bot.send_message(channel_object, embed=em)
-                        except discord.Forbidden as e:
+                        except (discord.Forbidden, discord.HTTPException) as e:
                             print("Forbidden in RedditContent - sending message! e: {} \n channel: {} \n post:{}"
                                   .format(e, channel, post.shortlink))
                             pass

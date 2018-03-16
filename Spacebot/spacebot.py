@@ -81,6 +81,7 @@ class main:
             print("llanswers timeout")
 
         self.bot.loop.create_task(self.updateservercount())
+        self.bot.loop.create_task(self.update_launch_data())
 
     async def on_message(self, message):
         if message.channel.is_private:
@@ -96,7 +97,7 @@ class main:
             try:
                 if message.content[r:r + 10] == "¯\_(ツ)_/¯" and str(
                         message.server.id) == "153646955464097792" and not message.author.permissions_in(
-                    message.channel).manage_channels:
+                         message.channel).manage_channels:
                     msgtodelete = await self.bot.send_message(message.channel, "\U0001F6D1 **No shrugs!**")
                     await self.bot.delete_message(message)
                     await asyncio.sleep(5)
@@ -191,18 +192,10 @@ class main:
                                          data=json.dumps(thepostdata)) as resp:
                 pass
 
-            # header = {
-            #    'Authorization': tokens["discordbots_token"],
-            #    'Content-Type': 'application/json'}
-
-            # async with self.session.post('https://discordbots.org/api/bots/291185373860855808/stats', headers=header,
-            #                             data=json.dumps(thepostdata)) as resp:
-            #    pass
-
             await asyncio.sleep(3600)
 
     async def fetch(self, url):
-        with async_timeout.timeout(10):
+        with async_timeout.timeout(60):
             async with self.session.get(url) as response:
                 return response
 
@@ -779,12 +772,18 @@ class main:
 
         await self.bot.say(message)
 
+    async def update_launch_data(self):
+        while not self.bot.is_closed:
+            await self.get_launch_data()
+            await asyncio.sleep(600)
+
+
     async def get_launch_data(self):
         """Returns a list containing launch data from www.launchlibrary.net
             Thank you LL devs!"""
 
         if time.time() - self.last_fetch > 1800:
-            resp = await self.fetch("https://launchlibrary.net/1.2/launch/next/10")
+            resp = await self.fetch("https://launchlibrary.net/1.3/launch/next/10")
             fetch_data = (await resp.json())["launches"]
 
             self.last_fetch = time.time()
