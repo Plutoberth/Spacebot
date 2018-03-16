@@ -2,3 +2,4 @@ tokens.json
 __pycache__/
 .idea/
 tests.py
+venv/
