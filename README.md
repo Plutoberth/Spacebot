@@ -55,5 +55,5 @@ Mod command. Purge (delete) that amount of messages from the chat.
 
 #### -A feature that will allow you to be @mentioned at any launch by chosen launch providers.
 
-#### -Send suggestions to Cakeofdestiny#2318
+#### -Send suggestions to Cakeofdestiny#2318 (on Discord)
 
