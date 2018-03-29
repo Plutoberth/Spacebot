@@ -125,11 +125,11 @@ class main:
 
                 if member.nick:
                     await self.bot.send_message(self.bot.get_channel("316188105528836099"),
-                                                ":outbox_tray:** `{0.name}#{0.discriminator}` (ID: `{0.id}`), AKA `{0.nick}` has left this server.**\n He joined at `{1.day}.{1.month}.{1.year}, on {1.hour}:{1.minute}`. That was `{2.day}` days ago."
+                                                "📤** `{0.name}#{0.discriminator}` (ID: `{0.id}`), AKA `{0.nick}` has left this server.**\n He joined at `{1.day}.{1.month}.{1.year}, on {1.hour}:{1.minute}`. That was `{2.day}` days ago."
                                                 .format(member, memberTime, diffTime))
                 else:
                     await self.bot.send_message(self.bot.get_channel("316188105528836099"),
-                                                ":outbox_tray:** `{0.name}#{0.discriminator}` (ID: `{0.id}`) has left this server.**\n He joined at `{1.day}.{1.month}.{1.year}, on {1.hour}:{1.minute}`. That was `{2.days}` days ago."
+                                                "📤** `{0.name}#{0.discriminator}` (ID: `{0.id}`) has left this server.**\n He joined at `{1.day}.{1.month}.{1.year}, on {1.hour}:{1.minute}`. That was `{2.days}` days ago."
                                                 .format(member, memberTime, diffTime))
 
         except discord.Forbidden:
@@ -143,11 +143,11 @@ class main:
 
         for page in pages:
             if isinstance(error, commands.MissingRequiredArgument):
-                em = discord.Embed(title="Missing args :x:",
+                em = discord.Embed(title="Missing args ❌",
                                    description=page.strip("```").replace('<', '[').replace('>', ']'),
                                    color=discord.Color.red())
             elif isinstance(error, commands.BadArgument):
-                em = discord.Embed(title="Bad args :x:",
+                em = discord.Embed(title="Bad args ❌",
                                    description=page.strip("```").replace('<', '[').replace('>', ']'),
                                    color=discord.Color.red())
             else:
@@ -196,8 +196,18 @@ class main:
 
     async def fetch(self, url):
         with async_timeout.timeout(60):
-            async with self.session.get(url) as response:
-                return response
+            tries = 0
+            while tries < 5:
+                try:
+                    async with self.session.get(url) as response:
+                        return response
+                except aiohttp.ClientConnectionError:
+                    print("Connection error with " + url)
+                    tries += 1
+                    continue
+            raise aiohttp.ClientConnectionError
+
+
 
     @staticmethod
     def get_time_to(timestamp: int):
@@ -223,7 +233,7 @@ class main:
         """Invite me to your server!"""
         em = discord.Embed(description="**Spacebot** by Cakeofdestiny#2318 .\n"
                                        "[Invite Link](https://discordapp.com/oauth2/authorize?client_id=291185373860855808&scope=bot&permissions=27648)\n"
-                                       "[Github](https://github.com/Cakeofdestiny/Spacebot)\n"
+                                       "[Github](https://github.com/plutoberth/Spacebot)\n"
                                        "[Official Server (kinda)](https://discord.gg/dHdbpwV)",
                            color=discord.Color.blue())
         print(self.bot.user.avatar_url)
@@ -317,7 +327,7 @@ class main:
             # If it does not exist, and the user didn't enter one, respond with an explanation prompt.
             if message is None:
                 await self.bot.say(
-                    ":information_source: **This server has no welcome message. \n\n To set one, use {}welcomemessage "
+                    "ℹ **This server has no welcome message. \n\n To set one, use {}welcomemessage "
                     "[message]\n Curly Brackets `{}` in your message will be replaced with a mention of the user.**".format(
                         prefix, '{}'))
                 return
@@ -334,7 +344,7 @@ class main:
                                     'api_paste_code': wmessage[1]})
 
             await self.bot.say(
-                ":information_source: **The welcome message for this server is hosted on Pastebin: {0} \n\nTo change it, "
+                "ℹ **The welcome message for this server is hosted on Pastebin: {0} \n\nTo change it, "
                 "use `{1}wm [message]`"
                 "\nCurly Brackets `{2}` in your message will be replaced with a mention of the user."
                 "\nTo disable welcome messages, type `{1}wm clear`** ".format(r.text, prefix, '{}'))
@@ -519,7 +529,7 @@ class main:
         async with self.session.get("https://www.reddit.com/r/{}/new.json?sort=new".format(subname)) as resp:
             tdict = await resp.json()
             if len(tdict["data"]["children"]) == 0:
-                await self.bot.say(":x: **This sub doesn't exist, or has 0 posts.**")
+                await self.bot.say("❌ **This sub doesn't exist, or has 0 posts.**")
                 return
 
         try:
@@ -594,11 +604,11 @@ class main:
             if gifname is None or gifmessage is None:
                 if user_perms:
                     await self.bot.say(
-                        ":information_source: **This server has no custom gifs. \n\nTo set some, use `{}gif "
+                        "ℹ **This server has no custom gifs. \n\nTo set some, use `{}gif "
                         "[gifname] [gifurl]`**".format(prefix))
                 else:
                     await self.bot.say(
-                        ":information_source: **This server has no custom gifs.\n Ask your admins to set some.**")
+                        "ℹ **This server has no custom gifs.\n Ask your admins to set some.**")
                 return
 
         # If they didn't request any gifs, display the list.
@@ -616,7 +626,7 @@ class main:
                         prefix)
                 if len(giflist) < 1750:  # discord limit is 2000
                     message_to_delete = await self.bot.send_message(ctx.message.channel,
-                                                                    ":information_source: **This server has the following gifs:**"
+                                                                    "ℹ **This server has the following gifs:**"
                                                                     "{}  \n:alarm_clock: **This message will be deleted in 3 minutes.**".format(
                                                                         giflist))
                     delay_time = 180
@@ -625,7 +635,7 @@ class main:
                                       data={'api_dev_key': tokens["pastebin_api_dev_key"], 'api_option': 'paste',
                                             'api_paste_code': giflist})
                     message_to_delete = await self.bot.send_message(ctx.message.channel,
-                                                                    ":information_source: **This server has too many gifs to display, so they are stored in pastebin: {}**"
+                                                                    "ℹ **This server has too many gifs to display, so they are stored in pastebin: {}**"
                                                                     "\n:alarm_clock: **This message will be deleted in 1 minute.**".format(
                                                                         r.text))
                     delay_time = 60
@@ -635,15 +645,15 @@ class main:
 
             elif user_perms:
                 await self.bot.say(
-                    ":information_source: **This server has no custom gifs. \n\n To set one, use {}gif "
+                    "ℹ **This server has no custom gifs. \n\n To set one, use {}gif "
                     "[gifname] [gifurl]\n **".format(prefix))
             else:
                 await self.bot.say(
-                    ":information_source: **This server has no custom gifs.\n Ask your admins to set some.**")
+                    "ℹ **This server has no custom gifs.\n Ask your admins to set some.**")
             return
         # If the user requested a gif, but didn't try to set one.
         if not gifmessage or not user_perms:
-            await self.bot.say(gifs.get(gifname, ":x: **Gif not found!**\nUse {}gifs to see the list.".format(prefix)))
+            await self.bot.say(gifs.get(gifname, "❌ **Gif not found!**\nUse {}gifs to see the list.".format(prefix)))
             return
 
         if gifname == "remove":
@@ -652,7 +662,7 @@ class main:
                 await self.bot.say("🚮 Removed `{}`.".format(gifmessage))
             else:
                 await self.bot.say(
-                    ":x: `{}` isn't a gif in this server. Could you have misspelled it?".format(gifmessage))
+                    "❌ `{}` isn't a gif in this server. Could you have misspelled it?".format(gifmessage))
         else:
             gifs[gifname] = gifmessage
             await self.bot.say(":white_check_mark: Set `{}` to `{}`.".format(gifname, gifmessage))
@@ -726,7 +736,7 @@ class main:
             role_list = [(r + " - **" + SHORTCUTS.get(r, r)) + "**" for r in role_list]
 
             await self.bot.say(
-                ":information_source: **This agency does not exist. \n Usage: `{}notifyme [agency] [agency] [agency]...`\n __Available agencies__**: "
+                "ℹ **This agency does not exist. \n Usage: `{}notifyme [agency] [agency] [agency]...`\n __Available agencies__**: "
                 "\n **All - All launch updates and agency updates.**"
                 "\n **Launch - All launch updates.**\n"
                 "\n*{}* "
@@ -748,7 +758,7 @@ class main:
                     removed_roles.append(r.name[:-7])
 
         except discord.Forbidden:
-            await self.bot.say(":x: I cannot manage roles.")
+            await self.bot.say("❌ I cannot manage roles.")
             return
 
         message = ""
@@ -801,7 +811,7 @@ class main:
         launch_info = await self.get_launch_data()
         if len(launch_info) == 0:
             await self.bot.say(
-                ":x: Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
+                "❌ Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
             return
         nldata = None
         for r in launch_info:
@@ -907,13 +917,13 @@ class main:
         with open('./decronym.json') as decronymFile:
             decronym = json.load(decronymFile)
         if not acronym:
-            await self.bot.say(":x: **Invalid Syntax!** \n Correct usage: `{}decronym/decr [acronym]`".format(
+            await self.bot.say("❌ **Invalid Syntax!** \n Correct usage: `{}decronym/decr [acronym]`".format(
                 getprefix(self.bot, ctx.message)))
             return
 
         matching_values = [value for key, value in decronym.items() if key.upper() == acronym.upper()]
         if len(matching_values) == 0:
-            await self.bot.say(":x: **0 Matching definitions found**. \n Could you have misspelled the acronym?")
+            await self.bot.say("❌ **0 Matching definitions found**. \n Could you have misspelled the acronym?")
             return
 
         matching_values = matching_values[0]
@@ -936,12 +946,12 @@ class main:
         """Change or view server prefix."""
 
         if not newprefix:
-            await self.bot.say(":information_source: **The current prefix for this server is: `{}`**".format(
+            await self.bot.say("ℹ **The current prefix for this server is: `{}`**".format(
                 getprefix(self.bot, ctx.message)))
             return
 
         if "@" in newprefix:
-            await self.bot.say(":x: **INVALID PREFIX**")
+            await self.bot.say("❌ **INVALID PREFIX**")
             return
 
         db.table('serverdata').insert({"id": ctx.message.server.id, "prefix": newprefix}, conflict="update").run()
