@@ -93,10 +93,17 @@ class main:
 
         if message.content[-17:] == " Unknown command." and message.author.id == "256766117505269760":
             await self.bot.delete_message(message)
-
-        currentTime = str(datetime.now().replace(microsecond=0, second=0).timestamp()) # gets current date time with a minute resolution
-        db.table('serverstats').get(message.server.id).update({currentTime:db.row[currentTime].add(1).default(1)}).run()
-
+        for r in range(len(message.content)):
+            try:
+                if message.content[r:r + 10] == "¯\_(ツ)_/¯" and str(
+                        message.server.id) == "153646955464097792" and not message.author.permissions_in(
+                         message.channel).manage_channels:
+                    msgtodelete = await self.bot.send_message(message.channel, "\U0001F6D1 **No shrugs!**")
+                    await self.bot.delete_message(message)
+                    await asyncio.sleep(5)
+                    await self.bot.delete_message(msgtodelete)
+            except:
+                pass
 
     async def on_member_join(self, member):
         try:
@@ -199,6 +206,8 @@ class main:
                     tries += 1
                     continue
             raise aiohttp.ClientConnectionError
+
+
 
     @staticmethod
     def get_time_to(timestamp: int):
