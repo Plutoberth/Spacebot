@@ -958,7 +958,7 @@ class main:
         await self.bot.say(
             "**The prefix for this server has been set to: {}**".format(getprefix(self.bot, ctx.message)))
 
-    @checks.mod_or_permissions(manage_channels=True)
+    @checks.mod_or_permissions(manage_roles=True)
     @commands.command(pass_context=True, no_pm=True)
     async def ping(self, ctx, *roles_str_list:str):
         """Use this command to ping un-pingable roles. The bot will make them pingable and ping, then toggle them back."""
