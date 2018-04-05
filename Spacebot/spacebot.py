@@ -787,7 +787,6 @@ class main:
             await self.get_launch_data()
             await asyncio.sleep(600)
 
-
     async def get_launch_data(self):
         """Returns a list containing launch data from www.launchlibrary.net
             Thank you LL devs!"""
@@ -958,6 +957,53 @@ class main:
 
         await self.bot.say(
             "**The prefix for this server has been set to: {}**".format(getprefix(self.bot, ctx.message)))
+
+    @checks.mod_or_permissions(manage_channels=True)
+    @commands.command(pass_context=True, no_pm=True)
+    async def ping(self, ctx, *roles_str_list:str):
+        """Use this command to ping un-pingable roles. The bot will make them pingable and ping, then toggle them back."""
+        member = ctx.message.server.get_member(self.bot.user.id)
+        if not member.permissions_in(ctx.message.channel).manage_roles:
+            await self.bot.say("❌ **I don't have the necessary permissions for this command.**\nPlease give me the **Manage Roles** permission.")
+            return
+        roles = []
+        for role_string in roles_str_list:
+            matching_roles = [r for r in ctx.message.server.roles if r.name.lower() == role_string.lower()]
+            if len(matching_roles) == 1:
+                roles.append(matching_roles[0])
+        if len(roles) == 0:
+            await self.bot.say("ℹ To use this command, give it a list of roles as arguments. It will mention them and make them unmentionable again."
+                               "\n**If they are already mentionable, it'll make them unmentionable.**")
+            return
+        unlocked_roles = []
+        roles_to_mention = []
+        for role in roles:
+            if role.mentionable:
+                unlocked_roles.append(role)
+            else:
+                roles_to_mention.append(role)
+        for role in roles_to_mention:
+            await self.bot.edit_role(server=ctx.message.server, role=role, mentionable=True)
+
+        all_roles = roles_to_mention+unlocked_roles
+        mention_string = " | ".join(r.mention for r in all_roles)
+        message = "Mentioning | {} |...".format(mention_string)
+        if len(unlocked_roles) > 0:
+            message += "\nℹ I've gone ahead and **removed** mentionability for the following roles: **`{}`**".format(", ".join([r.name for r in unlocked_roles]))
+
+        await self.bot.say(message)
+        for role in all_roles:
+            await self.bot.edit_role(server=ctx.message.server, role=role, mentionable=False)
+
+
+
+
+
+
+
+
+
+
 
 
 bot.add_cog(main(bot))

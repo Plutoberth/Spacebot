@@ -7,19 +7,19 @@
 ## Commands 
 ##### Note: These commands are only a limited the subset of the most crucial commands. Use ?help for more.
 
-#### ?reddit {subreddit}:
+#### ?reddit [subreddit]:
 Get notified about new posts from any subreddit in any selected channel.
 
-#### ?twitter {@handle}:
+#### ?twitter [@handle]:
 Get notified about new tweets from any user in any selected channel.
 
-#### ?rss {feed link}:
+#### ?rss [feed link]:
 Get notified about new posts on your favorite RSS feeds, in any selected channel.
 
-#### ?nl (nextlaunch):
+#### ?nl - nextlaunch:
 Get info about the next space launch, with an accurate UTC countdown.
 
-#### ?ll (listlaunches):
+#### ?ll - listlaunches:
 Get info about the next 10 (at most) launches, time, launch pad, rocket, and payload.
 
 #### ?prefix:
@@ -45,8 +45,11 @@ Set custom gifs for your server. View with `?gifs`.
 Decronyms common (and not so common) space related acronyms.
 Thanks to the decronym.xyz project and /u/OrangeredStilton for the list!
 
-####?purge [amount]
+#### ?purge [amount]
 Mod command. Purge (delete) that amount of messages from the chat.
+
+#### ?ping [role name] [role name]...
+Mod command. Have the bot ping unpingable roles, and then set them to unmentionable again.
 
 
 
