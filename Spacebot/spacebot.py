@@ -150,12 +150,13 @@ class main:
                 em = discord.Embed(title="Bad args ❌",
                                    description=page.strip("```").replace('<', '[').replace('>', ']'),
                                    color=discord.Color.red())
-            else:
+            elif not isinstance(error, commands.CheckFailure) and not isinstance(error, commands.CommandNotFound):
                 em = discord.Embed(title="Command Error! ❌",
-                                   description=page.strip("```").replace('<', '[').replace('>', ']') + "\n\n{}".format(error),
+                                   description=page.strip("```").replace('<', '[').replace('>', ']') + "{}".format(error),
                                    color=discord.Color.red())
                 print(error)
-
+            else:
+                return
             await self.bot.send_message(ctx.message.channel, embed=em)
 
     """
@@ -1013,7 +1014,7 @@ class main:
 
 bot.add_cog(main(bot))
 bot.load_extension("redditcontent")
-bot.load_extension("twittercontent")
+#bot.load_extension("twittercontent")
 bot.load_extension("rsscontent")
 
 bot.run(tokens["bot_token"])
