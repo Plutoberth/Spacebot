@@ -151,7 +151,10 @@ class main:
                                    description=page.strip("```").replace('<', '[').replace('>', ']'),
                                    color=discord.Color.red())
             else:
-                raise error
+                em = discord.Embed(title="Command Error! ❌",
+                                   description=page.strip("```").replace('<', '[').replace('>', ']') + "\n\n{}".format(error),
+                                   color=discord.Color.red())
+                print(error)
 
             await self.bot.send_message(ctx.message.channel, embed=em)
 
@@ -968,8 +971,10 @@ class main:
             return
         roles = []
         for role_string in roles_str_list:
-            matching_roles = [r for r in ctx.message.server.roles if r.name.lower() == role_string.lower()]
+            # Easier role matching
+            matching_roles = [r for r in ctx.message.server.roles if role_string.lower() in r.name.lower()]
             if len(matching_roles) == 1:
+                # If only one role matches, pick that one
                 roles.append(matching_roles[0])
         if len(roles) == 0:
             await self.bot.say("ℹ To use this command, give it a list of roles as arguments. It will mention them and make them unmentionable again."
