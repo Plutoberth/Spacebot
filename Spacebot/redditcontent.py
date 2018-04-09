@@ -79,8 +79,8 @@ class RedditContent:
                 if not post:
                     subdb.pop(s, None)
                     continue
-                #if post is older or the same than the lp continue
-                if redditlp[s] >= post.created_utc:
+                #if post isn't older than the redditlp post continue
+                if not post.created_utc > redditlp[s]:
                     continue
                 #set lp to current time
                 redditlp[s] = post.created_utc

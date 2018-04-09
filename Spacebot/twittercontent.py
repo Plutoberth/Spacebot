@@ -61,6 +61,7 @@ class TwitterContent:
                         lasttweet = lasttweets[0]
                     else:
                         self.delete_account(sub)
+                        continue
 
                 except (twitter.error.TwitterError, asyncio.TimeoutError) as e:
                     print("Error in twittercontent - getting last tweet! e: {} sub:{}".format(e, sub))
@@ -68,18 +69,19 @@ class TwitterContent:
                     try:
                         twitterapi.GetUserTimeline(screen_name=sub, count=1)
                     except twitter.error.TwitterError:
-                        self.delete_account(sub)
-                        print("{} removed".format(sub))
+                        #self.delete_account(sub)
+                        print("{} removed - not really though".format(sub))
                     continue
 
                 if sub in twitterlp:
                     if type(twitterlp[sub]) == str:
-                        db.table("subdata").insert({"id": "twitterlp", sub: time()}, conflict="update").run()
+                        print("str matched")
+                        db.table("subdata").insert({"id": "twitterlp", sub: lasttweet.created_at_in_seconds}, conflict="update").run()
                         continue
-                    elif time() <= twitterlp[sub]:
+                    elif lasttweet.created_at_in_seconds <= twitterlp[sub]:
                         continue
 
-                db.table("subdata").insert({"id": "twitterlp", sub: time()}, conflict="update").run()
+                db.table("subdata").insert({"id": "twitterlp", sub: lasttweet.created_at_in_seconds}, conflict="update").run()
 
                 em = self.construct_embed(lasttweet, sub)
 
