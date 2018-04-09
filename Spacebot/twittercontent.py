@@ -5,6 +5,7 @@ from io import TextIOWrapper
 import sys
 import json
 import twitter
+from time import time
 
 f = open("tokens.json", "r")
 tokens = json.loads(f.read())
@@ -38,7 +39,6 @@ class TwitterContent:
 
     async def twitter_content(self):
         while not self.bot.is_closed:
-            twittersubs = {}
             try:
                 twittersubs = db.table("subdata").get("twitter").run()
             except db.ReqlNonExistenceError:
@@ -73,10 +73,13 @@ class TwitterContent:
                     continue
 
                 if sub in twitterlp:
-                    if lasttweet.full_text == twitterlp[sub]:
+                    if type(twitterlp[sub]) == str:
+                        db.table("subdata").insert({"id": "twitterlp", sub: time()}, conflict="update").run()
+                        continue
+                    elif time() <= twitterlp[sub]:
                         continue
 
-                db.table("subdata").insert({"id": "twitterlp", sub: lasttweet.full_text}, conflict="update").run()
+                db.table("subdata").insert({"id": "twitterlp", sub: time()}, conflict="update").run()
 
                 em = self.construct_embed(lasttweet, sub)
 
