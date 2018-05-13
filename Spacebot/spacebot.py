@@ -42,7 +42,10 @@ description = '''A bot made by @Cakeofdestiny#2318 for space-related info, launc
 
 
 def getprefix(bot_obj, message):
-    return db.table("serverdata").get(message.server.id).get_field("prefix").default("?").run()
+    try:
+        return db.table("serverdata").get(message.server.id).get_field("prefix").default("?").run()
+    except AttributeError:  # Means it's a dm.
+        return '?'
 
 
 bot = commands.Bot(command_prefix=getprefix, description=description)
@@ -150,17 +153,17 @@ class Spacebot:
                 em = discord.Embed(title="❌ Command Error:",
                                    description=page.strip("```").replace('<', '[').replace('>', ']') + "{}".format(error),
                                    color=discord.Color.red())
-                print(error)
+                raise error
             else:
                 return
             await self.bot.send_message(ctx.message.channel, embed=em)
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, hidden=True)  # We can hide it since it is already in the formatter.
     async def help(self, ctx, specific_command: str = None):
-        """Get help for the bots command, or a specific one with a parameter."""
+        """Get help for all commands or a specific one."""
 
         if not specific_command:
-            help_text = self.bot.formatter.format_help_for(ctx, bot)
+            help_text = self.bot.formatter.format_help_for(ctx, bot)[0].replace("```", "")
 
         else:
             command = self.bot.commands.get(specific_command)
@@ -168,17 +171,20 @@ class Spacebot:
                 await self.bot.on_command_error(commands.BadArgument("Command not found."), ctx)
                 return
 
-            help_text = bot.formatter.format_help_for(ctx, command)
+            help_text = bot.formatter.format_help_for(ctx, command)[0].replace("```", "")
+
+        color = ctx.message.author.color
 
         em = discord.Embed(title="Displaying help for Spacebot:"
-                           , description=help_text, color=discord.Color.blue())
+                           , description=help_text,
+                           color=color)
 
         name = ctx.message.author.nick if ctx.message.author.nick else ctx.message.author.name
         avatar_url = ctx.message.author.avatar_url \
             if ctx.message.author.avatar_url \
             else ctx.message.author.default_avatar_url  # If he has an avatar, we can display it.
 
-        em.set_author(name="Requested by {}".format(name)
+        em.set_footer(text="Requested by {}".format(name)
                       , icon_url=avatar_url)
         em.set_thumbnail(url=self.bot.user.avatar_url)
         await self.bot.say(embed=em)
@@ -429,7 +435,7 @@ class Spacebot:
     @checks.mod_or_permissions(manage_server=True)
     @commands.command(pass_context=True, aliases=['twitter'])
     async def twitternotifs(self, ctx, subname: str = None):
-        """Toggle new tweet notifications from chosen Twitter accounts.."""
+        """Toggle new tweet notifications from chosen Twitter accounts."""
         # DB STRUCTURE
         # table : subdata
         # rows : reddit/twitter/twitterlp/redditlp
@@ -549,14 +555,13 @@ class Spacebot:
 
         db.table("subdata").insert({"id": "reddit", subname: sublist}, conflict="update").run()
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, hidden=True)
     async def l(self, ctx, serverid: str):
         """Restricted Command."""
         if str(ctx.message.author.id) == "146357631760596993":
             await self.bot.leave_server(self.bot.get_server(serverid))
 
-
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, hidden=True)
     async def getinvite(self, ctx, s_id: str, s_len: int):
         if str(ctx.message.author.id) == "146357631760596993":
             try:
@@ -566,7 +571,7 @@ class Spacebot:
 
             await self.bot.say("yes master {}".format(invite))
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, hidden=True)
     async def getall(self, ctx):
         if str(ctx.message.author.id) == "146357631760596993":
             users = sum([len(r.members) for r in self.bot.servers])
@@ -961,7 +966,8 @@ class Spacebot:
     @checks.mod_or_permissions(manage_roles=True)
     @commands.command(pass_context=True, no_pm=True)
     async def ping(self, ctx, *roles_str_list:str):
-        """Use this command to ping un-pingable roles. The bot will make them pingable and ping, then toggle them back."""
+        """Use this command to ping un-pingable roles.
+        The bot will make them pingable and ping, then toggle them back."""
         member = ctx.message.server.get_member(self.bot.user.id)
         if not member.permissions_in(ctx.message.channel).manage_roles:
             await self.bot.say("❌ **I don't have the necessary permissions for this command.**\nPlease give me the **Manage Roles** permission.")
