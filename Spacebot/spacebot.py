@@ -35,7 +35,7 @@ twitterapi = twitter.Api(consumer_key=tokens["twitter"]["consumer_key"],
 db.connect("localhost", 28015, 'spacebot').repl()
 
 
-def getprefix(bot, message):
+def getprefix(bot_obj, message):
     try:
         return db.table("serverdata").get(message.server.id).get_field("prefix").run()
     except (db.ReqlNonExistenceError, AttributeError):
@@ -54,12 +54,12 @@ bot = commands.Bot(command_prefix=getprefix, description=description)
 # bot.remove_command("help")
 
 
-class main:
-    def __init__(self, bot):
+class Spacebot:
+    def __init__(self, bot_obj):
 
         self.server = discord.server
         self.newprefix = None
-        self.bot = bot
+        self.bot = bot_obj
         self.notifstimer = 0
         self.last_fetch = 0
         self.launch_data = []
@@ -80,7 +80,7 @@ class main:
         except asyncio.TimeoutError:
             print("llanswers timeout")
 
-        self.bot.loop.create_task(self.updateservercount())
+        self.bot.loop.create_task(self.update_server_count())
         self.bot.loop.create_task(self.update_launch_data())
 
     async def on_message(self, message):
@@ -183,7 +183,7 @@ class main:
         em.set_thumbnail(url=self.bot.user.avatar_url)
         await self.bot.say(embed=em)"""
 
-    async def updateservercount(self):
+    async def update_server_count(self):
         while not self.bot.is_closed:
             thepostdata = {
                 "server_count": len(self.bot.servers)
@@ -210,8 +210,6 @@ class main:
                     tries += 1
                     continue
             raise aiohttp.ClientConnectionError
-
-
 
     @staticmethod
     def get_time_to(timestamp: int):
@@ -332,8 +330,8 @@ class main:
             if message is None:
                 await self.bot.say(
                     "ℹ **This server has no welcome message. \n\n To set one, use {}welcomemessage "
-                    "[message]\n Curly Brackets `{}` in your message will be replaced with a mention of the user.**".format(
-                        prefix, '{}'))
+                    "[message]\n Curly Brackets `{}` in your message will be replaced with a mention of the user.**"
+                    .format(prefix, '{}'))
                 return
 
         if message == "clear":
@@ -554,15 +552,15 @@ class main:
     @commands.command(pass_context=True)
     async def l(self, ctx, serverid: str):
         """Restricted Command."""
-        if not str(ctx.message.author.id) == "146357631760596993":
-            return
-        await self.bot.leave_server(self.bot.get_server(serverid))
+        if str(ctx.message.author.id) == "146357631760596993":
+            await self.bot.leave_server(self.bot.get_server(serverid))
+
 
     @commands.command(pass_context=True)
-    async def getinvite(self, ctx, serverid: str, invlength: int):
+    async def getinvite(self, ctx, s_id: str, s_len: int):
         if str(ctx.message.author.id) == "146357631760596993":
             try:
-                invite = str(await self.bot.create_invite(self.bot.get_server(serverid), max_age=invlength))
+                invite = str(await self.bot.create_invite(self.bot.get_server(s_id), max_age=s_len))
             except discord.errors.Forbidden:
                 invite = "Couldn't manage to create invite"
 
@@ -619,33 +617,31 @@ class main:
         if not gifname:
             if len(gifs) > 0:
                 giflist = ""
-                # This code gets a list of gifs, and encapsulates only the url part of the gif in non-embed carets for discord.
+                # This code gets a list of gifs, and encapsulates the url part of the gif in non-embed carets.
                 for k, v in gifs.items():
                     if v.find("http") != -1:
                         giflist += "\n-`{}`: {}<{}>".format(k, v[0:v.find("http")], v[v.find("http"):])
                     else:
                         giflist += "\n-`{}`: {}".format(k, v)
                 if user_perms:
-                    giflist += "\n To add more, use `{0}gif [gifname] [gifurl]` or `{0}gif remove [gifname] to remove.`".format(
-                        prefix)
+                    giflist += "\nTo add more, use `{0}gif [gifname] [gifurl]` or `{0}gif remove [gifname] to remove.`"\
+                        .format(prefix)
                 if len(giflist) < 1750:  # discord limit is 2000
                     message_to_delete = await self.bot.send_message(ctx.message.channel,
                                                                     "ℹ **This server has the following gifs:**"
                                                                     "{}  \n:alarm_clock: **This message will be deleted in 3 minutes.**".format(
                                                                         giflist))
                     delay_time = 180
+                    await asyncio.sleep(delay_time)
+                    await self.bot.delete_message(message_to_delete)
+                    await self.bot.delete_message(ctx.message)
                 else:
                     r = requests.post("https://pastebin.com/api/api_post.php",
                                       data={'api_dev_key': tokens["pastebin_api_dev_key"], 'api_option': 'paste',
                                             'api_paste_code': giflist})
-                    message_to_delete = await self.bot.send_message(ctx.message.channel,
+                    await self.bot.send_message(ctx.message.channel,
                                                                     "ℹ **This server has too many gifs to display, so they are stored in pastebin: {}**"
-                                                                    "\n:alarm_clock: **This message will be deleted in 1 minute.**".format(
-                                                                        r.text))
-                    delay_time = 60
-                await asyncio.sleep(delay_time)
-                await self.bot.delete_message(message_to_delete)
-                await self.bot.delete_message(ctx.message)
+                                                                    .format(r.text))
 
             elif user_perms:
                 await self.bot.say(
@@ -686,9 +682,9 @@ class main:
         # launch_time = 00000
         # time_to_launch = self.get_time_to(launch_time)
 
-        fullmessage = "Vehicle: __**Falcon Heavy**__ | Payload: __**Elon's Midnight Cherry Roadster**__"
+        fullmessage = "Vehicle: __**Falcon Heavy**__ | Payload: __**Elon's Midnight Cherry Roadster**__\n"
 
-        fullmessage += " | Time: __**February 6, 20:45 UTC**__\n"
+        fullmessage += "Time: __**February 6, 20:45 UTC**__\n"
 
         fullmessage += "Pad: __**Historic LC-39A**__ \nStatus : **Resounding Success!**"
 
@@ -1002,17 +998,7 @@ class main:
             await self.bot.edit_role(server=ctx.message.server, role=role, mentionable=False)
 
 
-
-
-
-
-
-
-
-
-
-
-bot.add_cog(main(bot))
+bot.add_cog(Spacebot(bot))
 bot.load_extension("redditcontent")
 bot.load_extension("twittercontent")
 bot.load_extension("rsscontent")
