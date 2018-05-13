@@ -139,15 +139,15 @@ class Spacebot:
 
         for page in pages:
             if isinstance(error, commands.MissingRequiredArgument):
-                em = discord.Embed(title="Missing args ❌",
+                em = discord.Embed(title="❌ Missing arguments:",
                                    description=page.strip("```").replace('<', '[').replace('>', ']'),
                                    color=discord.Color.red())
             elif isinstance(error, commands.BadArgument):
-                em = discord.Embed(title="Bad args ❌",
+                em = discord.Embed(title="❌ Bad arguments:",
                                    description=page.strip("```").replace('<', '[').replace('>', ']'),
                                    color=discord.Color.red())
             elif not isinstance(error, commands.CheckFailure) and not isinstance(error, commands.CommandNotFound):
-                em = discord.Embed(title="Command Error! ❌",
+                em = discord.Embed(title="❌ Command Error:",
                                    description=page.strip("```").replace('<', '[').replace('>', ']') + "{}".format(error),
                                    color=discord.Color.red())
                 print(error)
@@ -155,29 +155,33 @@ class Spacebot:
                 return
             await self.bot.send_message(ctx.message.channel, embed=em)
 
-    """
     @commands.command(pass_context=True)
-    async def help(self, ctx, specific: str = None):
-        fullmessage = ""
+    async def help(self, ctx, specific_command: str = None):
+        """Get help for the bots command, or a specific one with a parameter."""
 
-        if specific:
-            command = self.bot.commands.get(specific)
-            if not command:
-                await self.embederror(ctx, "The command {} does not exist.".format(specific))
-                return
-            page = bot.formatter.format_help_for(ctx, command)[0]
-            fullmessage = page.strip("```").replace('<', '[').replace('>', ']')
+        if not specific_command:
+            help_text = self.bot.formatter.format_help_for(ctx, bot)
 
         else:
-            for key, value in sorted(self.bot.commands.items()):
-                if key in ['getinvite', 'l', 'getall', 'rss', 'wm','eq','graphicsinterchangeformat', 'gifs', 'eq', 'elonquote','decr']:
-                    continue
-                fullmessage += ("**_{}_ - {} **\n".format(key, value.short_doc))
+            command = self.bot.commands.get(specific_command)
+            if not command:
+                await self.bot.on_command_error(commands.BadArgument("Command not found."), ctx)
+                return
 
-        em = discord.Embed(title="Displaying help for {}:".format(self.bot.user.name)
-                           , description=fullmessage, color=discord.Color.blue())
+            help_text = bot.formatter.format_help_for(ctx, command)
+
+        em = discord.Embed(title="Displaying help for Spacebot:"
+                           , description=help_text, color=discord.Color.blue())
+
+        name = ctx.message.author.nick if ctx.message.author.nick else ctx.message.author.name
+        avatar_url = ctx.message.author.avatar_url \
+            if ctx.message.author.avatar_url \
+            else ctx.message.author.default_avatar_url  # If he has an avatar, we can display it.
+
+        em.set_author(name="Requested by {}".format(name)
+                      , icon_url=avatar_url)
         em.set_thumbnail(url=self.bot.user.avatar_url)
-        await self.bot.say(embed=em)"""
+        await self.bot.say(embed=em)
 
     async def update_server_count(self):
         while not self.bot.is_closed:
