@@ -34,24 +34,20 @@ twitterapi = twitter.Api(consumer_key=tokens["twitter"]["consumer_key"],
 
 db.connect("localhost", 28015, 'spacebot').repl()
 
-
-def getprefix(bot_obj, message):
-    try:
-        return db.table("serverdata").get(message.server.id).get_field("prefix").run()
-    except (db.ReqlNonExistenceError, AttributeError):
-        return '?'
-
-
 SHORTCUTS = {"VirginGalactic": "VG", "Roscosmos": "RFSA", "SpaceX": "SpX", "OrbitalATK": "ATK",
              "BlueOrigin": "BO", "RocketLab": "RL", "CloudAerospace": "CA", "VectorSpaceSystems": "Vector",
              "SierraNevadaCorp": "SNC", "CopenhagenSuborbitals": "Copsub", "StratolaunchSystems": "Stratolaunch"}
 
 description = '''A bot made by @Cakeofdestiny#2318 for space-related info, launch timings, tweets, and reddit posts.'''
 
+
+def getprefix(bot_obj, message):
+    return db.table("serverdata").get(message.server.id).get_field("prefix").default("?").run()
+
+
 bot = commands.Bot(command_prefix=getprefix, description=description)
 
-
-# bot.remove_command("help")
+bot.remove_command("help")
 
 
 class Spacebot:

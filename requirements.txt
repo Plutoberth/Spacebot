@@ -1,0 +1,7 @@
+discord
+praw
+aiohttp
+rethinkdb
+python-twitter
+feedparser
+requests

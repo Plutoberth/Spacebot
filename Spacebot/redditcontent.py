@@ -34,7 +34,6 @@ class RedditContent:
     async def on_ready(self):
         self.bot.loop.create_task(self.reddit_content())
 
-
     async def reddit_content(self):
         while not self.bot.is_closed:
 
@@ -149,6 +148,7 @@ class RedditContent:
                                                  self.iconurls["reddit"]))
 
         return em
+
 
 def setup(bot):
     bot.add_cog(RedditContent(bot))
