@@ -667,12 +667,16 @@ class Spacebot:
                 await self.bot.say("🚮 Removed `{}`.".format(gifmessage))
             else:
                 await self.bot.say(
-                    "❌ `{}` isn't a gif in this server. Could you have misspelled it?".format(gifmessage))
+                    "❌ `{}` isn't a gif in this server. Could you have misspelled its name?".format(gifmessage))
         else:
             gifs[gifname] = gifmessage
             await self.bot.say(":white_check_mark: Set `{}` to `{}`.".format(gifname, gifmessage))
 
-        db.table('serverdata').insert({"id": ctx.message.server.id, "gifs": gifs}, conflict="update").run()
+        try:
+            db.table("serverdata").get(ctx.message.server.id).replace(db.row.without("gifs")).run()
+        except db.ReqlNonExistenceError:
+            pass
+        db.table("serverdata").insert({"id": ctx.message.server.id, "gifs": gifs}, conflict="update").run()
 
     async def toggle_notify(self, notify_role, member):
         if notify_role in member.roles:
