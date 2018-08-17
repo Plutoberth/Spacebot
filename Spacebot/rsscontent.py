@@ -76,7 +76,11 @@ class RSSContent:
                 entry = feed['entries'][0]
                 feed_data = feed['feed']
 
-                feed_id = entry['id']
+                feed_id = entry.get('id', None)
+
+                if not feed_id:
+                    continue
+
                 if rss_link in rss_lp:
                     if rss_lp[rss_link] == feed_id:
                         continue

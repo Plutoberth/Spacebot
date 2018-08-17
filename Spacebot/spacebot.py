@@ -172,6 +172,7 @@ class Spacebot:
                 return
 
             help_text = bot.formatter.format_help_for(ctx, command)[0].replace("```", "")
+            help_text = help_text.replace("\n", "\n\n")
 
         color = ctx.message.author.color
 
@@ -706,7 +707,6 @@ class Spacebot:
 
         # fullmessage += " {} hours, and {} minutes.**".format(time_to_launch["hours"], time_to_launch["minutes"])
 
-        # We check if there is an available live stream.
         fullmessage += "\n**[Recording available!](https://www.youtube.com/watch?v=wbSwFU6tY1c)**"
 
         fullmessage += "\n**Thanks to everyone who joined us. We hope to see you on the next launches!**"

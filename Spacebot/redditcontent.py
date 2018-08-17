@@ -3,11 +3,10 @@ import discord
 import asyncio
 from io import TextIOWrapper
 import sys
-import aiohttp
 import praw
 import json
 
-f = open("tokens.json","r")
+f = open("tokens.json", "r")
 tokens = json.loads(f.read())["reddit"]
 f.close()
 
@@ -37,17 +36,14 @@ class RedditContent:
     async def reddit_content(self):
         while not self.bot.is_closed:
 
-            reddit = praw.Reddit(client_id=tokens["client_id"], client_secret=tokens["client_secret"],
-                                 user_agent='PythonLinux:Spacebot:v1.2.3 (by /u/Cakeofdestiny)')
+
 
             subdb = db.table("subdata").get("reddit").run()
 
             redditlp = db.table("subdata").get("redditlp").run()
 
-
             if not redditlp:
                 redditlp = {}
-
 
             # loop through all subs
             for s, v in dict(subdb).items():
@@ -68,24 +64,25 @@ class RedditContent:
                 try:
                     post = reddit.subreddit(s).new(limit=1).next()
                 except Exception as e:
-                    if str(e) == "Redirect to /subreddits/search":
+                    if str(e) == "Redirect to /subreddits/search":  # This exception means that the sub doesn't exist
                         print("Removing sub {}".format(s))
                         subdb.pop(s, None)
                     else:
                         print("exception in getting post! e: {} \n s: {}".format(e, s))
-                        asyncio.sleep(30)
+                        asyncio.sleep(30)  # Reddit might be offline or blocking the bot. Sleep for a while.
                     continue
                 if not post:
                     subdb.pop(s, None)
                     continue
-                #if post isn't older than the redditlp post continue
+
+                # if post isn't older than the redditlp post continue
                 if not post.created_utc > redditlp[s]:
                     continue
                 #set lp to current time
                 redditlp[s] = post.created_utc
                 fullmessage = ""
                 # -Construct Embed
-                em = self.construct_embed(post,fullmessage,s)
+                em = self.construct_embed(post, s)
                 for channel in v:
 
                     try:
@@ -113,34 +110,40 @@ class RedditContent:
             db.table("subdata").insert(redditlp, conflict="replace").run()
             await asyncio.sleep(60)
 
+    def construct_embed(self, post, subreddit: str) -> discord.Embed:
+        """
+        Constructs an embed for a reddit post based on a PRAW post object.
+        :param post: A praw post object.
+        :param subreddit: The name of the subreddit
+        :return: A discord embed.
+        """
+        em = discord.Embed(color=discord.Color.blue())
 
-    def construct_embed(self, post, fullmessage, subreddit):
+        desc = ""
         if len(post.title) > 225:
             title = "[{}]({})".format(post.title, post.shortlink)
-            em = discord.Embed(description=fullmessage, title=title, color=discord.Color.blue())
+            em.title = title
         else:
-            fullmessage = "**[{}]({})**\n".format(post.title, post.shortlink)
-        em = discord.Embed(description=fullmessage, color=discord.Color.blue())
+            desc = "**[{}]({})**\n".format(post.title, post.shortlink)
 
         # check if it's a self post
         if post.is_self:
-            if len(post.selftext) > 1200:
-                fullmessage += "\n{}\n [More...]({})".format(post.selftext, post.shortlink)
+            if len(post.selftext) < 1200:
+                desc += "\n{}".format(post.selftext)  # If it's short enough, post the full text
             else:
-                fullmessage += "\n{}".format(post.selftext)
+                desc += "\n{}\n [More...]({})".format(post.selftext, post.shortlink)  # Otherwise truncate
 
         else:
             # add post link
-            fullmessage += "[Post]({})".format(post.shortlink)
+            desc += "[Post link]({})".format(post.url)
             if not post.thumbnail == "default":
-                redditformat = post.url[-3:]
-                imgformats = ["png", "jpg", "gif"]
-                if redditformat in imgformats:
+                image_format = post.url[-3:]
+                if image_format in ["png", "jpg", "gif"]:
                     em.set_image(url=post.url)
-                else:
+                elif post.thumbnail != "default":
                     em.set_thumbnail(url=post.thumbnail)
 
-        em.description = fullmessage
+        em.description = desc
 
         em.set_author(name="New post in r/{}, by {}:"
                       .format(subreddit, post.author.name),
