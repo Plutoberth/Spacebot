@@ -266,7 +266,6 @@ class Spacebot:
                 if randomelement[r] == "-":
                     dashocr.append(r)
             url = "https://media.giphy.com/media/{}/giphy.gif".format(randomelement[dashocr[-1] + 1:])
-            print(url)
             em.set_image(url=url)
             await self.bot.say(embed=em)
 
@@ -877,6 +876,9 @@ class Spacebot:
         """Get a list of launches"""
 
         launch_info = await self.get_launch_data()
+
+
+
         if len(launch_info) == 0:
             await self.bot.say(
                 ":( Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
@@ -1007,10 +1009,10 @@ class Spacebot:
         for role in all_roles:
             await self.bot.edit_role(server=ctx.message.server, role=role, mentionable=False)
 
+if __name__ == "__main__":
+    bot.add_cog(Spacebot(bot))
+    bot.load_extension("redditcontent")
+    bot.load_extension("twittercontent")
+    bot.load_extension("rsscontent")
 
-bot.add_cog(Spacebot(bot))
-bot.load_extension("redditcontent")
-bot.load_extension("twittercontent")
-bot.load_extension("rsscontent")
-
-bot.run(tokens["bot_token"])
+    bot.run(tokens["bot_token"])
