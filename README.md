@@ -4,6 +4,8 @@
 
 #### If you want to contribute, feel free to open a pull request :D
 
+#### Please note that most of the code was written while I was still in middle school, so don't judge :D
+
 #### The default prefix is '?'
 
 ## Commands 
