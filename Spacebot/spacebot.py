@@ -14,7 +14,8 @@ import json
 from io import TextIOWrapper
 import sys
 import feedparser
-from .constants import *
+from constants import *
+
 
 sys.stdout.flush()
 

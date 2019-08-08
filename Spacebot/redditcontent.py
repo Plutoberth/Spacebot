@@ -6,7 +6,7 @@ import sys
 import praw
 import prawcore
 import json
-from .constants import *
+from constants import *
 
 f = open("tokens.json", "r")
 tokens = json.loads(f.read())["reddit"]
