@@ -650,12 +650,8 @@ class Spacebot:
         # time_to_launch = self.get_time_to(launch_time)
 
         fullmessage = "Vehicle: __**Falcon Heavy**__ | Payload: __**Elon's Midnight Cherry Roadster**__\n"
-
         fullmessage += "Time: __**February 6, 20:45 UTC**__\n"
-
-        fullmessage += "Pad: __**Historic LC-39A**__ \nStatus : **Resounding Success!**"
-
-        fullmessage += "\n"
+        fullmessage += "Pad: __**Historic LC-39A**__ \nStatus : **Resounding Success!**\n"
 
         # if time_to_launch["days"] != 1:
         #    fullmessage += "**In {} days,".format(time_to_launch["days"])
@@ -751,22 +747,29 @@ class Spacebot:
         await self.bot.say(message)
 
     async def update_launch_data(self):
+        """A loop that fetches and updates the launch data cache periodically."""
         while not self.bot.is_closed:
-            await self.get_launch_data()
-            await asyncio.sleep(600)
+            await self.fetch_launch_data()
+            await asyncio.sleep(LAUNCH_DATA_FETCH_FREQUENCY)
+
+    async def fetch_launch_data(self):
+        """Update the cache of the launch data."""
+        resp = await self.fetch("https://launchlibrary.net/1.3/launch/next/10")
+        fetch_data = (await resp.json())["launches"]
+
+        self.last_fetch = time.time()
+        self.launch_data = fetch_data
 
     async def get_launch_data(self):
         """Returns a list containing launch data from www.launchlibrary.net
             Thank you LL devs!"""
 
-        if time.time() - self.last_fetch > 1800:
-            resp = await self.fetch("https://launchlibrary.net/1.3/launch/next/10")
-            fetch_data = (await resp.json())["launches"]
+        if (time.time() - self.last_fetch) > LAUNCH_DATA_FETCH_FREQUENCY:
+            # TODO: Change to run later and return the expired results
+            await self.fetch_launch_data()
 
-            self.last_fetch = time.time()
-            self.launch_data = fetch_data
-        else:
-            fetch_data = self.launch_data
+        fetch_data = self.launch_data
+
         if not fetch_data:
             # This makes sure that the receiving end doesnt freak out from an empty array
             fetch_data = []
