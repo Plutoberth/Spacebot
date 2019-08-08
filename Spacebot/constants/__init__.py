@@ -9,5 +9,3 @@ ICON_URLS = {'spacex': 'https://pbs.twimg.com/profile_images/671865418701606912/
              'spacexlounge': 'https://pbs.twimg.com/profile_images/671865418701606912/HECw8AzK.jpg',
              'esa': 'https://www.uncleninja.com/wp-content/uploads/2016/04/ESA_Logo.png',
              'reddit': 'https://vignette.wikia.nocookie.net/theamazingworldofgumball/images/e/ec/Reddit_Logo.png/revision/latest?cb=20170105232917'}
-
-LAUNCH_DATA_FETCH_FREQUENCY = 600
