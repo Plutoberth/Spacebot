@@ -16,7 +16,6 @@ import sys
 import feedparser
 from constants import *
 
-
 sys.stdout.flush()
 
 f = open("tokens.json", "r")
@@ -267,12 +266,13 @@ class Spacebot:
                     getprefix(self.bot, ctx.message)))
             return
         if amount.isdigit():
-            if int(amount) > 100:
+            # Delete the amonut + 1, as to not count the command message.
+            amount = int(amount) + 1
+            if int(amount) > 99:
                 await self.bot.say(
                     "Usage : `**{}purge [messages - maximum of 100]**`".format(
                         getprefix(self.bot, ctx.message)))
             else:
-                amount = int(amount)
                 await self.bot.purge_from(ctx.message.channel, limit=amount)
 
         else:
@@ -515,7 +515,7 @@ class Spacebot:
     @commands.command(pass_context=True, hidden=True)
     async def l(self, ctx, serverid: str):
         """Restricted Command."""
-        if str(ctx.message.author.id) ==  OWNER_UID:
+        if str(ctx.message.author.id) == OWNER_UID:
             await self.bot.leave_server(self.bot.get_server(serverid))
 
     @commands.command(pass_context=True, hidden=True)
@@ -700,13 +700,15 @@ class Spacebot:
             # Handling shortcuts
             role_list = [(r + " - **" + SHORTCUTS.get(r, r)) + "**" for r in role_list]
 
-            await self.bot.say(
-                "ℹ **This agency does not exist. \n Usage: `{}notifyme [agency] [agency] [agency]...`\n __Available agencies__**: "
-                "\n **All - All launch updates and agency updates.**"
-                "\n **Launch - All launch updates.**\n"
-                "\n*{}* "
-                "\n `lowercase` works too."
-                    .format(getprefix(bot, ctx.message), "\n".join(role_list)))
+            final_message = "" if agency_list_raw == "?" else "ℹ **This agency does not exist."
+            final_message += "\n Usage: `{}notifyme [agency] [agency] [agency]...`\n __Available agencies__**: " \
+                             "\n **All - All launch updates and agency updates.**" \
+                             "\n **Launch - All launch updates.**\n" \
+                             "\n*{}* " \
+                             "\n `lowercase` works too." \
+                .format(getprefix(bot, ctx.message), "\n".join(role_list))
+
+            await self.bot.say(final_message)
             return
 
         member = ctx.message.author
@@ -756,7 +758,7 @@ class Spacebot:
         """Returns a list containing launch data from www.launchlibrary.net
             Thank you LL devs!"""
 
-        if time.time() - self.last_fetch > 1800:
+        if time.time() - self.last_fetch > LAUNCH_DATA_FETCH_FREQUENCY:
             resp = await self.fetch("https://launchlibrary.net/1.3/launch/next/10")
             fetch_data = (await resp.json())["launches"]
 
@@ -970,6 +972,6 @@ if __name__ == "__main__":
     bot.add_cog(Spacebot(bot))
     bot.load_extension("redditcontent")
     bot.load_extension("twittercontent")
-    bot.load_extension("rsscontent")
+    # bot.load_extension("rsscontent")
 
     bot.run(tokens["bot_token"])
