@@ -74,10 +74,6 @@ class Spacebot:
         print(self.bot.user.id, flush=True)
         print(discord.utils.oauth_url(self.bot.user.id), flush=True)
         print('------', flush=True)
-        try:
-            self.llanswers = await self.fetch("https://launchlibrary.net/1.2/launch/next/10")
-        except asyncio.TimeoutError:
-            print("llanswers timeout")
 
         self.bot.loop.create_task(self.update_launch_data())
 
@@ -89,20 +85,6 @@ class Spacebot:
                                         "The current prefix for this server is: " + str(
                                             getprefix(self.bot, message)))
 
-        if message.content[-17:] == " Unknown command." and message.author.id == "256766117505269760":
-            await self.bot.delete_message(message)
-        for r in range(len(message.content)):
-            try:
-                if message.content[r:r + 10] == "¯\_(ツ)_/¯" and str(
-                        message.server.id) == "153646955464097792" and not message.author.permissions_in(
-                    message.channel).manage_channels:
-                    msgtodelete = await self.bot.send_message(message.channel, "\U0001F6D1 **No shrugs!**")
-                    await self.bot.delete_message(message)
-                    await asyncio.sleep(5)
-                    await self.bot.delete_message(msgtodelete)
-            except:
-                pass
-
     async def on_member_join(self, member):
         try:
             wmessage = db.table("serverdata").get(member.server.id).get_field("wmessage").run()
@@ -111,23 +93,23 @@ class Spacebot:
 
         try:
             await self.bot.send_message(self.bot.get_channel(wmessage[0]), wmessage[1].format(member.mention))
-        except:
+        except discord.Forbidden:
             pass
 
     async def on_member_remove(self, member):
         try:
             if int(member.server.id) == 316186751565824001:
-                memberTime = member.joined_at
-                diffTime = datetime.now() - memberTime
+                member_time = member.joined_at
+                diff_time = datetime.now() - member_time
 
                 if member.nick:
                     await self.bot.send_message(self.bot.get_channel("316188105528836099"),
                                                 "📤** `{0.name}#{0.discriminator}` (ID: `{0.id}`), AKA `{0.nick}` has left this server.**\n He joined at `{1.day}.{1.month}.{1.year}, on {1.hour}:{1.minute}`. That was `{2.day}` days ago."
-                                                .format(member, memberTime, diffTime))
+                                                .format(member, member_time, diff_time))
                 else:
                     await self.bot.send_message(self.bot.get_channel("316188105528836099"),
                                                 "📤** `{0.name}#{0.discriminator}` (ID: `{0.id}`) has left this server.**\n He joined at `{1.day}.{1.month}.{1.year}, on {1.hour}:{1.minute}`. That was `{2.days}` days ago."
-                                                .format(member, memberTime, diffTime))
+                                                .format(member, member_time, diff_time))
 
         except discord.Forbidden:
             pass
