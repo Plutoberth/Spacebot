@@ -79,7 +79,6 @@ class Spacebot:
         except asyncio.TimeoutError:
             print("llanswers timeout")
 
-        self.bot.loop.create_task(self.update_server_count())
         self.bot.loop.create_task(self.update_launch_data())
 
     async def on_message(self, message):
@@ -190,31 +189,16 @@ class Spacebot:
         em.set_thumbnail(url=self.bot.user.avatar_url)
         await self.bot.say(embed=em)
 
-    async def update_server_count(self):
-        while not self.bot.is_closed:
-            thepostdata = {
-                "server_count": len(self.bot.servers)
-            }
-            header = {
-                'Authorization': tokens["discord.pw_token"],
-                'Content-Type': 'application/json'}
-
-            async with self.session.post('https://bots.discord.pw/api/bots/291185373860855808/stats', headers=header,
-                                         data=json.dumps(thepostdata)) as resp:
-                pass
-
-            await asyncio.sleep(3600)
-
     async def fetch(self, url):
         with async_timeout.timeout(60):
-            tries = 0
-            while tries < 5:
+            attempts = 0
+            while attempts < 5:
                 try:
                     async with self.session.get(url) as response:
                         return response
                 except aiohttp.ClientConnectionError:
                     print("Connection error with " + url)
-                    tries += 1
+                    attempts += 1
                     continue
             raise aiohttp.ClientConnectionError
 
