@@ -6,6 +6,7 @@ import sys
 import praw
 import prawcore
 import json
+from .constants import *
 
 f = open("tokens.json", "r")
 tokens = json.loads(f.read())["reddit"]
@@ -23,19 +24,22 @@ db.connect("localhost", 28015, 'spacebot').repl()
 class RedditContent:
     def __init__(self, bot):
         self.bot = bot
-        self.iconurls = {'spacex': 'https://pbs.twimg.com/profile_images/671865418701606912/HECw8AzK.jpg',
-                         'blueorigin': 'https://yt3.ggpht.com/-7t1ah-4Rkmg/AAAAAAAAAAI/AAAAAAAAAAA/oCypeGgwHNA/s900-c-k-no-mo-rj-c0xffffff/photo.jpg',
-                         'ula': 'https://pbs.twimg.com/profile_images/937905979865300992/o7etOvdP_400x400.jpg',
-                         'nasa': 'http://i.imgur.com/tcjKucp.png',
-                         'spacexlounge': 'https://pbs.twimg.com/profile_images/671865418701606912/HECw8AzK.jpg',
-                         'esa': 'https://www.uncleninja.com/wp-content/uploads/2016/04/ESA_Logo.png',
-                         'reddit': 'https://vignette.wikia.nocookie.net/theamazingworldofgumball/images/e/ec/Reddit_Logo.png/revision/latest?cb=20170105232917'}
 
         self.reddit = praw.Reddit(client_id=tokens["client_id"], client_secret=tokens["client_secret"],
                                   user_agent='PythonLinux:Spacebot:v1.2.3 (by /u/Cakeofdestiny)')
 
     async def on_ready(self):
         self.bot.loop.create_task(self.reddit_content())
+
+    async def fetch_single_sub(self, subreddit: str, limit: int = 1):
+        """
+        Fetch a single sub and return the results. This is mainly done for async granularity as a quick fix to the
+        long reddit_content loop.
+        :param subreddit: The subreddit to fetch.
+        :param limit: Limit of posts.
+        :return: Posts for the subreddit
+        """
+        return self.reddit.subreddit(subreddit).new(limit=limit).next()
 
     async def reddit_content(self):
         while not self.bot.is_closed:
@@ -63,7 +67,7 @@ class RedditContent:
                 if subreddit not in redditlp:
                     redditlp[subreddit] = 0
                 try:
-                    post = self.reddit.subreddit(subreddit).new(limit=1).next()
+                    post = await self.fetch_single_sub(subreddit)
                 except prawcore.exceptions.NotFound:
                     print("Removing sub {}".format(subreddit))
                     subdb.pop(subreddit, None)
@@ -148,8 +152,8 @@ class RedditContent:
 
         em.set_author(name="New post in r/{}, by {}:"
                       .format(subreddit, post.author.name),
-                      icon_url=self.iconurls.get(subreddit,
-                                                 self.iconurls["reddit"]))
+                      icon_url=ICON_URLS.get(subreddit,
+                                             ICON_URLS["reddit"]))
 
         return em
 

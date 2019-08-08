@@ -36,6 +36,16 @@ class TwitterContent:
     def delete_account(self, twitter_account):
         db.table("subdata").get("twitter").replace(db.row.without(twitter_account)).run()
 
+    async def fetch_single_feed(self, username, count=1) -> list:
+        """
+        Fetch a single feed and return the results. This is separated into a function mainly for async granularity.
+        :param count: Number of last tweets to fetch.
+        :param username: The twitter username to query.
+        :return: The list containing the last tweets.
+        """
+        return twitterapi.GetUserTimeline(screen_name=username, count=count, include_rts=False,
+                                          exclude_replies=True)
+
     async def twitter_content(self):
         while not self.bot.is_closed:
             try:
@@ -57,12 +67,11 @@ class TwitterContent:
                     continue
 
                 try:
-                    lasttweets = twitterapi.GetUserTimeline(screen_name=sub, count=1, include_rts=False,
-                                                            exclude_replies=True)
+                    lasttweets = await self.fetch_single_feed(sub)
                     if len(lasttweets) > 0:
                         lasttweet = lasttweets[0]
                     else:
-                        # self.delete_account(sub)
+                        self.delete_account(sub)
                         continue
 
                 except (twitter.error.TwitterError, asyncio.TimeoutError) as e:
@@ -98,7 +107,7 @@ class TwitterContent:
                         continue
                     try:
                         await self.bot.send_message(channel_object, embed=em)
-                    except discord.Forbidden as e:
+                    except (discord.Forbidden, discord.errors.HTTPException) as e:
                         print("Forbidden in TwitterContent - sending message! e: {}".format(e))
                         pass
 
