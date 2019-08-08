@@ -267,12 +267,13 @@ class Spacebot:
                     getprefix(self.bot, ctx.message)))
             return
         if amount.isdigit():
+            # Delete the amonut + 1, as to not count the command message.
+            amount = int(amount) + 1
             if int(amount) > 100:
                 await self.bot.say(
-                    "Usage : `**{}purge [messages - maximum of 100]**`".format(
-                        getprefix(self.bot, ctx.message)))
+                    "Usage : `**{}purge [messages - maximum of {}]**`".format(
+                        getprefix(self.bot, ctx.message), 100))
             else:
-                amount = int(amount)
                 await self.bot.purge_from(ctx.message.channel, limit=amount)
 
         else:
@@ -700,13 +701,15 @@ class Spacebot:
             # Handling shortcuts
             role_list = [(r + " - **" + SHORTCUTS.get(r, r)) + "**" for r in role_list]
 
-            await self.bot.say(
-                "ℹ **This agency does not exist. \n Usage: `{}notifyme [agency] [agency] [agency]...`\n __Available agencies__**: "
-                "\n **All - All launch updates and agency updates.**"
-                "\n **Launch - All launch updates.**\n"
-                "\n*{}* "
-                "\n `lowercase` works too."
-                    .format(getprefix(bot, ctx.message), "\n".join(role_list)))
+            final_message = "" if agency_list_raw == "?" else "ℹ **This agency does not exist.\n"
+            final_message += "Usage: `{}notifyme [agency] [agency] [agency]...`\n __Available agencies__**: " \
+                             "\n **All - All launch updates and agency updates.**" \
+                             "\n **Launch - All launch updates.**\n" \
+                             "\n*{}* " \
+                             "\n `lowercase` works too." \
+                .format(getprefix(bot, ctx.message), "\n".join(role_list))
+
+            await self.bot.say(final_message)
             return
 
         member = ctx.message.author
@@ -970,6 +973,6 @@ if __name__ == "__main__":
     bot.add_cog(Spacebot(bot))
     bot.load_extension("redditcontent")
     bot.load_extension("twittercontent")
-    bot.load_extension("rsscontent")
+    # bot.load_extension("rsscontent")
 
     bot.run(tokens["bot_token"])
