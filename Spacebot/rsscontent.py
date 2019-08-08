@@ -36,18 +36,20 @@ class RSSContent:
             async with self.session.get(url) as response:
                 try:
                     return await response.text()
-                except:
-                    print("url", url)
+                except Exception as e:
+                    print("Exception in RSS Fetch for {}, e: {}".format(url, e))
 
     async def get_rss_feed(self, rss_link):
         feed_string = await self.fetch(rss_link)
         feed = feedparser.parse(feed_string)
         return feed
 
-    async def verify_rss_feed(self, feed):
+    @staticmethod
+    def verify_rss_feed(feed):
         return len(feed['entries']) > 0
 
-    def remove_rss_feed(self, rss_link):
+    @staticmethod
+    def remove_rss_feed(rss_link):
         db.table("subdata").insert({"id": "rss", rss_link: []}, conflict="update").run()
 
     async def rss_content(self):
@@ -68,7 +70,7 @@ class RSSContent:
                     continue
 
                 feed = await self.get_rss_feed(rss_link)
-                if not await self.verify_rss_feed(feed) or len(rss_subs) == 0:
+                if not self.verify_rss_feed(feed) or len(rss_subs) == 0:
                     self.remove_rss_feed(rss_link)
                     await asyncio.sleep(60)
                     continue

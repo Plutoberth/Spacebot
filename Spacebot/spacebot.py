@@ -14,6 +14,7 @@ import json
 from io import TextIOWrapper
 import sys
 import feedparser
+from .constants import *
 
 sys.stdout.flush()
 
@@ -43,9 +44,9 @@ description = '''A bot made by @Cakeofdestiny#2318 for space-related info, launc
 
 def getprefix(bot_obj, message):
     try:
-        return db.table("serverdata").get(message.server.id).get_field("prefix").default("?").run()
+        return db.table("serverdata").get(message.server.id).get_field("prefix").default(DEFAULT_PREFIX).run()
     except AttributeError:  # Means it's a dm.
-        return '?'
+        return DEFAULT_PREFIX
 
 
 bot = commands.Bot(command_prefix=getprefix, description=description)
@@ -55,16 +56,12 @@ bot.remove_command("help")
 
 class Spacebot:
     def __init__(self, bot_obj):
-
         self.server = discord.server
         self.newprefix = None
         self.bot = bot_obj
         self.notifstimer = 0
         self.last_fetch = 0
         self.launch_data = []
-        self.mnames = {"January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6, "July": 7, "August": 8,
-                       "September": 9, "October": 10,
-                       "November": 11, "December": 12}
 
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
@@ -98,7 +95,7 @@ class Spacebot:
 
     async def on_member_remove(self, member):
         try:
-            if int(member.server.id) == 316186751565824001:
+            if int(member.server.id) == RE_ID:
                 member_time = member.joined_at
                 diff_time = datetime.now() - member_time
 
@@ -517,12 +514,12 @@ class Spacebot:
     @commands.command(pass_context=True, hidden=True)
     async def l(self, ctx, serverid: str):
         """Restricted Command."""
-        if str(ctx.message.author.id) == "146357631760596993":
+        if str(ctx.message.author.id) ==  OWNER_UID:
             await self.bot.leave_server(self.bot.get_server(serverid))
 
     @commands.command(pass_context=True, hidden=True)
     async def getinvite(self, ctx, s_id: str, s_len: int):
-        if str(ctx.message.author.id) == "146357631760596993":
+        if str(ctx.message.author.id) == OWNER_UID:
             try:
                 invite = str(await self.bot.create_invite(self.bot.get_server(s_id), max_age=s_len))
             except discord.errors.Forbidden:
@@ -532,7 +529,7 @@ class Spacebot:
 
     @commands.command(pass_context=True, hidden=True)
     async def getall(self, ctx):
-        if str(ctx.message.author.id) == "146357631760596993":
+        if str(ctx.message.author.id) == OWNER_UID:
             users = sum([len(r.members) for r in self.bot.servers])
             bots = sum([len([x for x in r.members if x.bot]) for r in self.bot.servers])
             await self.bot.say(
@@ -678,7 +675,7 @@ class Spacebot:
 
     @commands.command(pass_context=True)
     async def notifyme(self, ctx, *, agency_list_raw: str = "Launch"):
-        if int(ctx.message.server.id) != 316186751565824001:
+        if int(ctx.message.server.id) != RE_ID:
             return
         agency_list = agency_list_raw.split(" ")
         # Lowering the cases
@@ -822,7 +819,7 @@ class Spacebot:
             vidurl = nldata["vidURLs"][0]
             fullmessage += "\n**[Livestream available!]({})**".format(vidurl)
 
-        if int(ctx.message.server.id) == 316186751565824001:
+        if int(ctx.message.server.id) == RE_ID:
             fullmessage += "\n\n**To be notified on launches and special events, use the command `.notifyme`**"
 
         em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
@@ -930,7 +927,8 @@ class Spacebot:
         member = ctx.message.server.get_member(self.bot.user.id)
         if not member.permissions_in(ctx.message.channel).manage_roles:
             await self.bot.say(
-                "❌ **I don't have the necessary permissions for this command.**\nPlease give me the **Manage Roles** permission.")
+                "❌ **I don't have the necessary permissions for this command.**\n"
+                "Please give me the **Manage Roles** permission.")
             return
         roles = []
         for role_string in roles_str_list:
@@ -941,7 +939,8 @@ class Spacebot:
                 roles.append(matching_roles[0])
         if len(roles) == 0:
             await self.bot.say(
-                "ℹ To use this command, give it a list of roles as arguments. It will mention them and make them unmentionable again."
+                "ℹ To use this command, give it a list of roles as arguments. It will mention them and make them "
+                "unmentionable again. "
                 "\n**If they are already mentionable, it'll make them unmentionable.**")
             return
         unlocked_roles = []

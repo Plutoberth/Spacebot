@@ -61,7 +61,7 @@ class RedditContent:
 
                 # if sub not in lp set lp 0
                 if subreddit not in redditlp:
-                    redditlp[subreddit] = 1500000000.0
+                    redditlp[subreddit] = 0
                 try:
                     post = self.reddit.subreddit(subreddit).new(limit=1).next()
                 except prawcore.exceptions.NotFound:
@@ -81,7 +81,6 @@ class RedditContent:
                     continue
                 # set lp to current time
                 redditlp[subreddit] = post.created_utc
-                fullmessage = ""
                 # -Construct Embed
                 em = self.construct_embed(post, subreddit)
                 for channel in subscribers[:]:
