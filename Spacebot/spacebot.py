@@ -96,7 +96,7 @@ class Spacebot:
             try:
                 if message.content[r:r + 10] == "¯\_(ツ)_/¯" and str(
                         message.server.id) == "153646955464097792" and not message.author.permissions_in(
-                         message.channel).manage_channels:
+                    message.channel).manage_channels:
                     msgtodelete = await self.bot.send_message(message.channel, "\U0001F6D1 **No shrugs!**")
                     await self.bot.delete_message(message)
                     await asyncio.sleep(5)
@@ -150,7 +150,8 @@ class Spacebot:
                                    color=discord.Color.red())
             elif not isinstance(error, commands.CheckFailure) and not isinstance(error, commands.CommandNotFound):
                 em = discord.Embed(title="❌ Command Error:",
-                                   description=page.strip("```").replace('<', '[').replace('>', ']') + "{}".format(error),
+                                   description=page.strip("```").replace('<', '[').replace('>', ']') + "{}".format(
+                                       error),
                                    color=discord.Color.red())
                 raise error
             else:
@@ -247,16 +248,15 @@ class Spacebot:
         em.set_author(name="Links:", icon_url=self.bot.user.avatar_url)
         await self.bot.say(embed=em)
 
-    @commands.command()
-    async def randomlanding(self):
+    async def get_random_gif(self, query):
         async with self.session.get(
-                "http://api.giphy.com/v1/gifs/search?q=spacex+landing.json&api_key=" + tokens["giphy_api_key"]) as resp:
+                "http://api.giphy.com/v1/gifs/search?q={}.json&api_key=".format(query)
+                + tokens["giphy_api_key"]) as resp:
             try:
                 tdict = await resp.json()
             except json.decoder.JSONDecodeError:
                 print("JSONDecodeError! r: {}. Giphy is probably down.", flush=True)
 
-            em = discord.Embed(color=discord.Colour.dark_blue())
             randomelement = random.choice(tdict["data"])["url"]
 
             dashocr = []
@@ -264,29 +264,22 @@ class Spacebot:
                 if randomelement[r] == "-":
                     dashocr.append(r)
             url = "https://media.giphy.com/media/{}/giphy.gif".format(randomelement[dashocr[-1] + 1:])
-            em.set_image(url=url)
-            await self.bot.say(embed=em)
+
+            return url
+
+    @commands.command()
+    async def randomlanding(self):
+        gif_url = await self.get_random_gif("spacex+landing")
+        em = discord.Embed(color=discord.Colour.dark_blue())
+        em.set_image(url=gif_url)
+        await self.bot.say(embed=em)
 
     @commands.command()
     async def randomlaunch(self):
-        async with self.session.get(
-                "http://api.giphy.com/v1/gifs/search?q=rocket+launch.json&api_key=" + tokens["giphy_api_key"]) as resp:
-            try:
-                tdict = await resp.json()
-            except json.decoder.JSONDecodeError:
-                print("JSONDecodeError! r: {}. Giphy is probably down.", flush=True)
-
-            em = discord.Embed(color=discord.Colour.dark_blue())
-            randomelement = random.choice(tdict["data"])["url"]
-
-            dashocr = []
-            for r in range(len(randomelement)):
-                if randomelement[r] == "-":
-                    dashocr.append(r)
-            url = "https://media.giphy.com/media/{}/giphy.gif".format(randomelement[dashocr[-1] + 1:])
-            print(url)
-            em.set_image(url=url)
-            await self.bot.say(embed=em)
+        gif_url = await self.get_random_gif("rocket+launch")
+        em = discord.Embed(color=discord.Colour.dark_blue())
+        em.set_image(url=gif_url)
+        await self.bot.say(embed=em)
 
     @commands.cooldown(1, 30, commands.BucketType.user)
     @checks.mod_or_permissions(manage_channels=True)
@@ -335,7 +328,7 @@ class Spacebot:
                 await self.bot.say(
                     "ℹ **This server has no welcome message. \n\n To set one, use {}welcomemessage "
                     "[message]\n Curly Brackets `{}` in your message will be replaced with a mention of the user.**"
-                    .format(prefix, '{}'))
+                        .format(prefix, '{}'))
                 return
 
         if message == "clear":
@@ -629,7 +622,7 @@ class Spacebot:
                     else:
                         giflist += "\n-`{}`: {}".format(k, v)
                 if user_perms:
-                    giflist += "\nTo add more, use `{0}gif [gifname] [gifurl]` or `{0}gif remove [gifname] to remove.`"\
+                    giflist += "\nTo add more, use `{0}gif [gifname] [gifurl]` or `{0}gif remove [gifname] to remove.`" \
                         .format(prefix)
                 if len(giflist) < 1750:  # discord limit is 2000
                     message_to_delete = await self.bot.send_message(ctx.message.channel,
@@ -645,8 +638,8 @@ class Spacebot:
                                       data={'api_dev_key': tokens["pastebin_api_dev_key"], 'api_option': 'paste',
                                             'api_paste_code': giflist})
                     await self.bot.send_message(ctx.message.channel,
-                                                                    "ℹ **This server has too many gifs to display, so they are stored in pastebin: {}**"
-                                                                    .format(r.text))
+                                                "ℹ **This server has too many gifs to display, so they are stored in pastebin: {}**"
+                                                .format(r.text))
 
             elif user_perms:
                 await self.bot.say(
@@ -749,7 +742,7 @@ class Spacebot:
                 "\n **Launch - All launch updates.**\n"
                 "\n*{}* "
                 "\n `lowercase` works too."
-                .format(getprefix(bot, ctx.message), "\n".join(role_list)))
+                    .format(getprefix(bot, ctx.message), "\n".join(role_list)))
             return
 
         member = ctx.message.author
@@ -877,8 +870,6 @@ class Spacebot:
 
         launch_info = await self.get_launch_data()
 
-
-
         if len(launch_info) == 0:
             await self.bot.say(
                 ":( Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
@@ -939,15 +930,11 @@ class Spacebot:
         matching_values = matching_values[0]
         acronym_message = "\n".join(
             ["{}. **{}**".format(i + 1, matching_values[i]) for i in range(len(matching_values))])
-        if len(matching_values) == 1:
-            em = discord.Embed(description=acronym_message,
-                               title="I found 1 definition for the acronym **{}**:".format(acronym.upper()),
-                               color=discord.Color.blue())
-        else:
-            em = discord.Embed(description=acronym_message,
-                               title="I found {} definitions for the acronym **{}**:".format(len(matching_values),
-                                                                                             acronym.upper()),
-                               color=discord.Color.blue())
+        defs = "1 definition" if len(matching_values) == 1 else "{} definitions".format(len(matching_values))
+        em = discord.Embed(description=acronym_message,
+                           title="I found {} for the acronym **{}**:".format(defs, acronym.upper()),
+                           color=discord.Color.blue())
+
         await self.bot.say(embed=em)
 
     @checks.mod_or_permissions(manage_server=True)
@@ -971,12 +958,13 @@ class Spacebot:
 
     @checks.mod_or_permissions(manage_roles=True)
     @commands.command(pass_context=True, no_pm=True)
-    async def ping(self, ctx, *roles_str_list:str):
+    async def ping(self, ctx, *roles_str_list: str):
         """Use this command to ping un-pingable roles.
         The bot will make them pingable and ping, then toggle them back."""
         member = ctx.message.server.get_member(self.bot.user.id)
         if not member.permissions_in(ctx.message.channel).manage_roles:
-            await self.bot.say("❌ **I don't have the necessary permissions for this command.**\nPlease give me the **Manage Roles** permission.")
+            await self.bot.say(
+                "❌ **I don't have the necessary permissions for this command.**\nPlease give me the **Manage Roles** permission.")
             return
         roles = []
         for role_string in roles_str_list:
@@ -986,8 +974,9 @@ class Spacebot:
                 # If only one role matches, pick that one
                 roles.append(matching_roles[0])
         if len(roles) == 0:
-            await self.bot.say("ℹ To use this command, give it a list of roles as arguments. It will mention them and make them unmentionable again."
-                               "\n**If they are already mentionable, it'll make them unmentionable.**")
+            await self.bot.say(
+                "ℹ To use this command, give it a list of roles as arguments. It will mention them and make them unmentionable again."
+                "\n**If they are already mentionable, it'll make them unmentionable.**")
             return
         unlocked_roles = []
         roles_to_mention = []
@@ -999,15 +988,17 @@ class Spacebot:
         for role in roles_to_mention:
             await self.bot.edit_role(server=ctx.message.server, role=role, mentionable=True)
 
-        all_roles = roles_to_mention+unlocked_roles
+        all_roles = roles_to_mention + unlocked_roles
         mention_string = " | ".join(r.mention for r in all_roles)
         message = "Mentioning | {} |...".format(mention_string)
         if len(unlocked_roles) > 0:
-            message += "\nℹ I've gone ahead and **removed** mentionability for the following roles: **`{}`**".format(", ".join([r.name for r in unlocked_roles]))
+            message += "\nℹ I've gone ahead and **removed** mentionability for the following roles: **`{}`**".format(
+                ", ".join([r.name for r in unlocked_roles]))
 
         await self.bot.say(message)
         for role in all_roles:
             await self.bot.edit_role(server=ctx.message.server, role=role, mentionable=False)
+
 
 if __name__ == "__main__":
     bot.add_cog(Spacebot(bot))

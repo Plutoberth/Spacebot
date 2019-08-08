@@ -31,15 +31,14 @@ class RedditContent:
                          'esa': 'https://www.uncleninja.com/wp-content/uploads/2016/04/ESA_Logo.png',
                          'reddit': 'https://vignette.wikia.nocookie.net/theamazingworldofgumball/images/e/ec/Reddit_Logo.png/revision/latest?cb=20170105232917'}
 
+        self.reddit = praw.Reddit(client_id=tokens["client_id"], client_secret=tokens["client_secret"],
+                                  user_agent='PythonLinux:Spacebot:v1.2.3 (by /u/Cakeofdestiny)')
+
     async def on_ready(self):
         self.bot.loop.create_task(self.reddit_content())
 
     async def reddit_content(self):
         while not self.bot.is_closed:
-
-            reddit = praw.Reddit(client_id=tokens["client_id"], client_secret=tokens["client_secret"],
-                                 user_agent='PythonLinux:Spacebot:v1.2.3 (by /u/Cakeofdestiny)')
-
             subdb = db.table("subdata").get("reddit").run()
 
             redditlp = db.table("subdata").get("redditlp").run()
@@ -64,7 +63,7 @@ class RedditContent:
                 if subreddit not in redditlp:
                     redditlp[subreddit] = 1500000000.0
                 try:
-                    post = reddit.subreddit(subreddit).new(limit=1).next()
+                    post = self.reddit.subreddit(subreddit).new(limit=1).next()
                 except prawcore.exceptions.NotFound:
                     print("Removing sub {}".format(subreddit))
                     subdb.pop(subreddit, None)
@@ -72,7 +71,7 @@ class RedditContent:
                     print("exception in getting post! e: {} \n subreddit: {}".format(e, subreddit))
                     await asyncio.sleep(30)  # Reddit might be offline or blocking the bot. Sleep for a while.
                     continue
-                
+
                 if not post:
                     subdb.pop(subreddit, None)
                     continue
@@ -86,13 +85,11 @@ class RedditContent:
                 # -Construct Embed
                 em = self.construct_embed(post, subreddit)
                 for channel in subscribers[:]:
-
                     try:
                         channel_object = self.bot.get_channel(channel)
                     except Exception as e:
-                        print(
-                            "reddit get channel, exception {}! Details below for debugging: \n\n channel: {}\n post: {}\n".format(
-                                e, channel, post.shortlink))
+                        print("reddit get channel, exception {}! Details below for debugging: \n\n "
+                              "channel: {}\n post: {}\n".format(e, channel, post.shortlink))
                         subdb[subreddit].remove(channel)
                         continue
                     if not channel_object:
@@ -107,7 +104,6 @@ class RedditContent:
                             print("discord HTTPException in RedditContent - sending message! e: {} "
                                   "\n channel: {} \n post:{}"
                                   .format(e, channel, post.shortlink))
-
 
             redditlp["id"] = "redditlp"
             subdb["id"] = "reddit"
