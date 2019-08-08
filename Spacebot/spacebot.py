@@ -117,7 +117,6 @@ class Spacebot:
 
     async def on_member_remove(self, member):
         try:
-
             if int(member.server.id) == 316186751565824001:
                 memberTime = member.joined_at
                 diffTime = datetime.now() - memberTime
@@ -245,7 +244,6 @@ class Spacebot:
                                        "[Github](https://github.com/plutoberth/Spacebot)\n"
                                        "[Official Server (kinda)](https://discord.gg/dHdbpwV)",
                            color=discord.Color.blue())
-        print(self.bot.user.avatar_url)
         em.set_author(name="Links:", icon_url=self.bot.user.avatar_url)
         await self.bot.say(embed=em)
 
@@ -358,10 +356,12 @@ class Spacebot:
                 "\nTo disable welcome messages, type `{1}wm clear`** ".format(r.text, prefix, '{}'))
             return
 
-        if "{}" not in message:
+        # Formatter must occur once
+        if message.count("{}") != 1:
             await self.bot.say(
-                ":warning: **You didn't specify a user identifier, so the bot will not mention the user that joins. "
-                "\n Good example message: `Hi, {} and welcome to our discord server`**")
+                ":warning: **You didn't specify a user identifier properly,"
+                " so the bot will not mention the new user. "
+                "\n Good example message: `Welcome to our discord server, {}!`**")
 
         wmessage = [ctx.message.channel.id, message]
         db.table('serverdata').insert({"id": ctx.message.server.id, "wmessage": wmessage}, conflict="update").run()

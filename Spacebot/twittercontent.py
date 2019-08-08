@@ -5,7 +5,6 @@ from io import TextIOWrapper
 import sys
 import json
 import twitter
-from time import time
 
 f = open("tokens.json", "r")
 tokens = json.loads(f.read())
@@ -35,7 +34,7 @@ class TwitterContent:
         self.bot.loop.create_task(self.twitter_content())
 
     def delete_account(self, twitter_account):
-        db.table("subdata").insert({"id":"twitter", twitter_account:[]}, conflict="update").run()
+        db.table("subdata").get("twitter").replace(db.row.without(twitter_account)).run()
 
     async def twitter_content(self):
         while not self.bot.is_closed:
@@ -54,13 +53,16 @@ class TwitterContent:
 
                 # If it has no members we just skip it for efficiencies sake
                 if len(channels) == 0:
+                    self.delete_account(sub)
                     continue
+
                 try:
-                    lasttweets = twitterapi.GetUserTimeline(screen_name=sub, count=1, include_rts=False, exclude_replies=True)
+                    lasttweets = twitterapi.GetUserTimeline(screen_name=sub, count=1, include_rts=False,
+                                                            exclude_replies=True)
                     if len(lasttweets) > 0:
                         lasttweet = lasttweets[0]
                     else:
-                        self.delete_account(sub)
+                        # self.delete_account(sub)
                         continue
 
                 except (twitter.error.TwitterError, asyncio.TimeoutError) as e:
@@ -69,19 +71,16 @@ class TwitterContent:
                     try:
                         twitterapi.GetUserTimeline(screen_name=sub, count=1)
                     except twitter.error.TwitterError:
-                        #self.delete_account(sub)
-                        print("{} removed - not really though".format(sub))
+                        self.delete_account(sub)
+                        print("{} removed".format(sub))
                     continue
 
                 if sub in twitterlp:
-                    if type(twitterlp[sub]) == str:
-                        print("str matched")
-                        db.table("subdata").insert({"id": "twitterlp", sub: lasttweet.created_at_in_seconds}, conflict="update").run()
-                        continue
-                    elif lasttweet.created_at_in_seconds <= twitterlp[sub]:
+                    if lasttweet.created_at_in_seconds <= twitterlp[sub]:
                         continue
 
-                db.table("subdata").insert({"id": "twitterlp", sub: lasttweet.created_at_in_seconds}, conflict="update").run()
+                db.table("subdata").insert({"id": "twitterlp", sub: lasttweet.created_at_in_seconds},
+                                           conflict="update").run()
 
                 em = self.construct_embed(lasttweet, sub)
 
@@ -112,8 +111,9 @@ class TwitterContent:
 
         em = discord.Embed(
             description="{} \n\n [Tweet Link](https://twitter.com/{}/status/{})".format(tweet.full_text,
-                                                                                            sub,
-                                                                                            tweet.id_str), color=discord.Color.blue())
+                                                                                        sub,
+                                                                                        tweet.id_str),
+            color=discord.Color.blue())
 
         em.set_author(name="New tweet by {}".format(tweet.user.name), icon_url=tweet.user.profile_image_url)
 
@@ -123,8 +123,6 @@ class TwitterContent:
                 em.set_image(url=tweet.media[0].media_url)
 
         return em
-
-
 
 
 def setup(bot):
