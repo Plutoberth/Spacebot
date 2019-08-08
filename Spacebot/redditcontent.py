@@ -4,6 +4,7 @@ import asyncio
 from io import TextIOWrapper
 import sys
 import praw
+import prawcore
 import json
 
 f = open("tokens.json", "r")
@@ -36,7 +37,8 @@ class RedditContent:
     async def reddit_content(self):
         while not self.bot.is_closed:
 
-
+            reddit = praw.Reddit(client_id=tokens["client_id"], client_secret=tokens["client_secret"],
+                                 user_agent='PythonLinux:Spacebot:v1.2.3 (by /u/Cakeofdestiny)')
 
             subdb = db.table("subdata").get("reddit").run()
 
@@ -46,44 +48,44 @@ class RedditContent:
                 redditlp = {}
 
             # loop through all subs
-            for s, v in dict(subdb).items():
-                if s == "id":
+            for subreddit, subscribers in dict(subdb).items():
+                if subreddit == "id":
                     continue
                 # if sub has zero members delete it
-                if v is not None:
-                    if len(v) == 0:
-                        subdb.pop(s, None)
+                if subscribers is not None:
+                    if len(subscribers) == 0:
+                        subdb.pop(subreddit, None)
                         continue
                 else:
-                    subdb.pop(s, None)
+                    subdb.pop(subreddit, None)
                     continue
 
                 # if sub not in lp set lp 0
-                if s not in redditlp:
-                    redditlp[s] = 1500000000.0
+                if subreddit not in redditlp:
+                    redditlp[subreddit] = 1500000000.0
                 try:
-                    post = reddit.subreddit(s).new(limit=1).next()
+                    post = reddit.subreddit(subreddit).new(limit=1).next()
+                except prawcore.exceptions.NotFound:
+                    print("Removing sub {}".format(subreddit))
+                    subdb.pop(subreddit, None)
                 except Exception as e:
-                    if str(e) == "Redirect to /subreddits/search":  # This exception means that the sub doesn't exist
-                        print("Removing sub {}".format(s))
-                        subdb.pop(s, None)
-                    else:
-                        print("exception in getting post! e: {} \n s: {}".format(e, s))
-                        asyncio.sleep(30)  # Reddit might be offline or blocking the bot. Sleep for a while.
+                    print("exception in getting post! e: {} \n subreddit: {}".format(e, subreddit))
+                    await asyncio.sleep(30)  # Reddit might be offline or blocking the bot. Sleep for a while.
                     continue
+                
                 if not post:
-                    subdb.pop(s, None)
+                    subdb.pop(subreddit, None)
                     continue
 
                 # if post isn't older than the redditlp post continue
-                if not post.created_utc > redditlp[s]:
+                if not post.created_utc > redditlp[subreddit]:
                     continue
-                #set lp to current time
-                redditlp[s] = post.created_utc
+                # set lp to current time
+                redditlp[subreddit] = post.created_utc
                 fullmessage = ""
                 # -Construct Embed
-                em = self.construct_embed(post, s)
-                for channel in v:
+                em = self.construct_embed(post, subreddit)
+                for channel in subscribers[:]:
 
                     try:
                         channel_object = self.bot.get_channel(channel)
@@ -91,17 +93,21 @@ class RedditContent:
                         print(
                             "reddit get channel, exception {}! Details below for debugging: \n\n channel: {}\n post: {}\n".format(
                                 e, channel, post.shortlink))
-                        subdb[s] = v.remove(channel)
+                        subdb[subreddit].remove(channel)
                         continue
                     if not channel_object:
-                        subdb[s] = v.remove(channel)
+                        subdb[subreddit].remove(channel)
                     else:
                         try:
                             await self.bot.send_message(channel_object, embed=em)
-                        except (discord.Forbidden, discord.HTTPException) as e:
-                            print("Forbidden in RedditContent - sending message! e: {} \n channel: {} \n post:{}"
+                        except discord.Forbidden:
+                            print("Forbidden - Removing channel...")
+                            subdb[subreddit].remove(channel)
+                        except discord.HTTPException as e:
+                            print("discord HTTPException in RedditContent - sending message! e: {} "
+                                  "\n channel: {} \n post:{}"
                                   .format(e, channel, post.shortlink))
-                            pass
+
 
             redditlp["id"] = "redditlp"
             subdb["id"] = "reddit"
