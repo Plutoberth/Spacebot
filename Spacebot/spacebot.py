@@ -516,7 +516,7 @@ class Spacebot:
     @commands.command(pass_context=True, hidden=True)
     async def l(self, ctx, serverid: str):
         """Restricted Command."""
-        if str(ctx.message.author.id) ==  OWNER_UID:
+        if str(ctx.message.author.id) == OWNER_UID:
             await self.bot.leave_server(self.bot.get_server(serverid))
 
     @commands.command(pass_context=True, hidden=True)
@@ -754,11 +754,15 @@ class Spacebot:
 
     async def fetch_launch_data(self):
         """Update the cache of the launch data."""
-        resp = await self.fetch("https://launchlibrary.net/1.3/launch/next/10")
-        fetch_data = (await resp.json())["launches"]
+        try:
+            resp = await self.fetch("https://launchlibrary.net/1.3/launch/next/10")
+            fetch_data = (await resp.json())["launches"]
 
-        self.last_fetch = time.time()
-        self.launch_data = fetch_data
+            self.last_fetch = time.time()
+            self.launch_data = fetch_data
+        except aiohttp.ClientConnectionError as e:
+            print("ClientConnectionError when fetching data from launchlibrary,", e)
+            self.launch_data = None
 
     async def get_launch_data(self):
         """Returns a list containing launch data from www.launchlibrary.net
@@ -780,8 +784,7 @@ class Spacebot:
         """Get information on the next launch."""
         launch_info = await self.get_launch_data()
         if len(launch_info) == 0:
-            await self.bot.say(
-                "❌ Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
+            await self.bot.say(LAUNCH_LIBRARY_ERROR_MESSAGE)
             return
         nldata = None
         for r in launch_info:
@@ -841,8 +844,7 @@ class Spacebot:
         launch_info = await self.get_launch_data()
 
         if len(launch_info) == 0:
-            await self.bot.say(
-                ":( Unable to establish a link with launchlibrary. **Please contact Cakeofdestiny#2318 immediately.**")
+            await self.bot.say(LAUNCH_LIBRARY_ERROR_MESSAGE)
             return
 
         fullmessage = ""
