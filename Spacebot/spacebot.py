@@ -95,16 +95,16 @@ class Spacebot:
 
     async def on_member_remove(self, member):
         try:
-            if int(member.server.id) == RE_ID:
+            if member.server.id == RE_ID:
                 member_time = member.joined_at
                 diff_time = datetime.now() - member_time
 
                 if member.nick:
-                    await self.bot.send_message(self.bot.get_channel("316188105528836099"),
+                    await self.bot.send_message(self.bot.get_channel(RE_MOD_CHANNEL),
                                                 "📤** `{0.name}#{0.discriminator}` (ID: `{0.id}`), AKA `{0.nick}` has left this server.**\n He joined at `{1.day}.{1.month}.{1.year}, on {1.hour}:{1.minute}`. That was `{2.day}` days ago."
                                                 .format(member, member_time, diff_time))
                 else:
-                    await self.bot.send_message(self.bot.get_channel("316188105528836099"),
+                    await self.bot.send_message(self.bot.get_channel(RE_MOD_CHANNEL),
                                                 "📤** `{0.name}#{0.discriminator}` (ID: `{0.id}`) has left this server.**\n He joined at `{1.day}.{1.month}.{1.year}, on {1.hour}:{1.minute}`. That was `{2.days}` days ago."
                                                 .format(member, member_time, diff_time))
 
@@ -673,7 +673,7 @@ class Spacebot:
 
     @commands.command(pass_context=True)
     async def notifyme(self, ctx, *, agency_list_raw: str = "Launch"):
-        if int(ctx.message.server.id) != RE_ID:
+        if ctx.message.server.id != RE_ID:
             return
         agency_list = agency_list_raw.split(" ")
         # Lowering the cases
@@ -833,7 +833,7 @@ class Spacebot:
             vidurl = nldata["vidURLs"][0]
             fullmessage += "\n**[Livestream available!]({})**".format(vidurl)
 
-        if int(ctx.message.server.id) == RE_ID:
+        if ctx.message.server.id == RE_ID:
             fullmessage += "\n\n**To be notified on launches, use the command `.notifyme`**"
 
         em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
@@ -868,7 +868,8 @@ class Spacebot:
 
             # If the launch was not assigned an accurate date yet, display the month only.
             if launch["status"] == 2:
-                ws = launch["windowstart"][0:launch["windowstart"].index(' ')] + " - Day TBD"
+                window_start_string = launch["windowstart"]
+                ws = "TBD - {}".format(window_start_string[:window_start_string.find(",")])
             else:
                 ws = window_start.strftime(LIST_LAUNCHES_TIME_FORMAT)
 
