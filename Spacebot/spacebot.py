@@ -805,7 +805,7 @@ class Spacebot:
         time_to_launch = self.get_time_to(nldata["wsstamp"])
 
         fullmessage = "{0} **{1[0]}** | **{1[1]}**\n" \
-            .format(LAUNCH_EMOJI[LAUNCH_GO],
+            .format(ROCKET,
                     nldata["name"].split('|'))
 
         windowstart = datetime.fromtimestamp(nldata["wsstamp"])

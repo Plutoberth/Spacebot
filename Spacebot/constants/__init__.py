@@ -14,6 +14,7 @@ LAUNCH_LOGO = "https://images-ext-1.discordapp.net/eyJ1cmwiOiJodHRwOi8vaS5pbWd1c
 WHITE_SMALL_SQUARE = "\U000025AB"
 DEFAULT_LAUNCH_EMOJI = WHITE_SMALL_SQUARE
 ROUND_PUSHPIN = "📍"
+ROCKET = "🚀"
 
 LAUNCH_EMOJI = {1: "<:launch_go:609767183668740128>",
                 2: "<:launch_tbd:609767183798763533>",
