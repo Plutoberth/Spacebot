@@ -132,6 +132,7 @@ class Spacebot:
                                    description=page.strip("```").replace('<', '[').replace('>', ']') + "{}".format(
                                        error),
                                    color=discord.Color.red())
+                await self.bot.send_message(ctx.message.channel, embed=em)
                 raise error
             else:
                 return
@@ -175,7 +176,7 @@ class Spacebot:
             while attempts < 5:
                 try:
                     async with self.session.get(url) as response:
-                        return response
+                        return await response.json()
                 except aiohttp.ClientConnectionError:
                     print("Connection error with " + url)
                     attempts += 1
@@ -756,11 +757,12 @@ class Spacebot:
         """Update the cache of the launch data."""
         try:
             resp = await self.fetch("https://launchlibrary.net/1.3/launch/next/10")
-            fetch_data = (await resp.json())["launches"]
+            fetch_data = resp["launches"]
 
             self.last_fetch = time.time()
             self.launch_data = fetch_data
         except aiohttp.ClientConnectionError as e:
+            raise e
             print("ClientConnectionError when fetching data from launchlibrary,", e)
             self.launch_data = None
 
@@ -786,6 +788,7 @@ class Spacebot:
         if len(launch_info) == 0:
             await self.bot.say(LAUNCH_LIBRARY_ERROR_MESSAGE)
             return
+
         nldata = None
         for r in launch_info:
             if r["wsstamp"] == 0:
@@ -797,25 +800,24 @@ class Spacebot:
 
         if not nldata:
             await self.bot.say(
-                ":rocket: Currently there are 0 listed launches with accurate dates. Check back soon :alarm_clock: !")
+                ":rocket: There are 0 listed launches with accurate dates. Check back soon :alarm_clock: !")
             return
 
         time_to_launch = self.get_time_to(nldata["wsstamp"])
 
         fullmessage = "Vehicle: __**{0[0]}**__| Payload: __**{0[1]}**__".format(nldata["name"].split('|'))
 
-        ws = nldata["windowstart"][:-7]
-        ws = ws[0:ws.index(str(datetime.now().year))] + ws[-5:] + " UTC"
+        ws = datetime.fromtimestamp(nldata["wsstamp"]).strftime("%m %d, %H:%M UTC")
 
         fullmessage += " | Time: __**{}**__\n".format(ws)
 
         try:
-            # The launch site will be one line down from the time and other things
             launchsite = nldata["location"]["pads"][0]["name"]
             fullmessage += "Pad: __**{}**__".format(launchsite)
         except KeyError:
             pass
-        fullmessage += "\n\n"  # We print those here to make sure it newlines twice
+
+        fullmessage += "\n\n"
 
         if time_to_launch["days"] != 1:
             fullmessage += "**In {} days,".format(time_to_launch["days"])
