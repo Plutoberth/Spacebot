@@ -16,7 +16,6 @@ import sys
 import feedparser
 from constants import *
 
-
 sys.stdout.flush()
 
 f = open("tokens.json", "r")
@@ -805,19 +804,22 @@ class Spacebot:
 
         time_to_launch = self.get_time_to(nldata["wsstamp"])
 
-        fullmessage = "Vehicle: __**{0[0]}**__| Payload: __**{0[1]}**__".format(nldata["name"].split('|'))
+        fullmessage = "{0} **{1[0]}** | **{1[1]}**\n" \
+            .format(LAUNCH_EMOJI[LAUNCH_GO],
+                    nldata["name"].split('|'))
 
-        ws = datetime.fromtimestamp(nldata["wsstamp"]).strftime(LAUNCH_TIME_FORMAT)
-
-        fullmessage += " | Time: __**{}**__\n".format(ws)
+        windowstart = datetime.fromtimestamp(nldata["wsstamp"])
+        ws = windowstart.strftime(NEXT_LAUNCH_TIME_FORMAT)
 
         try:
             launchsite = nldata["location"]["pads"][0]["name"]
-            fullmessage += "Pad: __**{}**__".format(launchsite)
+            fullmessage += "{} **{}** \n".format(ROUND_PUSHPIN, launchsite)
         except KeyError:
             pass
 
-        fullmessage += "\n\n"
+        hour = windowstart.strftime("%I").replace("0", "")
+        hour = hour if hour != " " else "12"
+        fullmessage += ":clock{}: **{}**\n\n".format(hour, ws)
 
         if time_to_launch["days"] != 1:
             fullmessage += "**In {} days,".format(time_to_launch["days"])
@@ -832,13 +834,13 @@ class Spacebot:
             fullmessage += "\n**[Livestream available!]({})**".format(vidurl)
 
         if int(ctx.message.server.id) == RE_ID:
-            fullmessage += "\n\n**To be notified on launches and special events, use the command `.notifyme`**"
+            fullmessage += "\n\n**To be notified on launches, use the command `.notifyme`**"
 
         em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
         em.set_author(name="Next launch:", icon_url=LAUNCH_LOGO)
-        
+
         em.set_footer(text="Retrieved from launchlibrary.net at {}"
-                      .format(datetime.fromtimestamp(self.last_fetch).strftime("%H:%M UTC")))
+                      .format(datetime.fromtimestamp(self.last_fetch).strftime(FETCH_TIME_FORMAT)))
 
         await self.bot.send_message(ctx.message.channel, embed=em)
 
@@ -852,14 +854,15 @@ class Spacebot:
             await self.bot.say(LAUNCH_LIBRARY_ERROR_MESSAGE)
             return
 
-        fullmessage = ""
-        actlaunches = 0
+        messages = []
+
         launches_go = list(sorted(filter(lambda x: x["status"] == 1, launch_info), key=lambda x: x["wsstamp"]))
-        launches_tbd = list(sorted(filter(lambda x: x["status"] == 2, launch_info), key=lambda x:x ["wsstamp"]))
+        launches_tbd = list(sorted(filter(lambda x: x["status"] == 2, launch_info), key=lambda x: x["wsstamp"]))
         launch_info = launches_go + launches_tbd
         for launch in launch_info:
-            actlaunches += 1
-            fullmessage += "Vehicle: __**{0[0]}**__| Payload: __**{0[1]}**__".format(launch["name"].split('|'))
+            emoji = LAUNCH_EMOJI.get(launch["status"], DEFAULT_LAUNCH_EMOJI)
+
+            fullmessage = "{0} **{1[0]}| {1[1]}**\n".format(emoji, launch["name"].split('|'))
 
             window_start = datetime.fromtimestamp(launch["wsstamp"])
 
@@ -867,16 +870,23 @@ class Spacebot:
             if launch["status"] == 2:
                 ws = launch["windowstart"][0:launch["windowstart"].index(' ')] + " - Day TBD"
             else:
-                ws = window_start.strftime(LAUNCH_TIME_FORMAT)
+                ws = window_start.strftime(LIST_LAUNCHES_TIME_FORMAT)
 
-            fullmessage += " | Time: {}\n".format(ws)
+            try:
+                launchsite = launch["location"]["pads"][0]["name"]
+                fullmessage += "{}\n".format(launchsite)
+            except KeyError:
+                pass
 
-        em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
-        em.set_author(name="Next {} spacecraft launches:".format(actlaunches),
+            fullmessage += "{}".format(ws)
+            messages.append(fullmessage)
+
+        em = discord.Embed(description="\n".join(messages), color=discord.Color.dark_blue())
+        em.set_author(name="Next {} orbital launches:".format(len(messages)),
                       icon_url=LAUNCH_LOGO)
 
         em.set_footer(text="Retrieved from launchlibrary.net at {}"
-                      .format(datetime.fromtimestamp(self.last_fetch).strftime("%H:%M UTC")))
+                      .format(datetime.fromtimestamp(self.last_fetch).strftime(FETCH_TIME_FORMAT)))
         await self.bot.say(embed=em)
 
     @commands.command(pass_context=True, aliases=['elonquote', 'eq'])
