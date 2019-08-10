@@ -835,8 +835,11 @@ class Spacebot:
             fullmessage += "\n\n**To be notified on launches and special events, use the command `.notifyme`**"
 
         em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
-        em.set_author(name="Next launch:",
-                      icon_url=LAUNCH_LOGO)
+        em.set_author(name="Next launch:", icon_url=LAUNCH_LOGO)
+        
+        em.set_footer(text="Retrieved from launchlibrary.net at {}"
+                      .format(datetime.fromtimestamp(self.last_fetch).strftime("%H:%M UTC")))
+
         await self.bot.send_message(ctx.message.channel, embed=em)
 
     @commands.command(aliases=['ll', 'launchlist'])
@@ -858,7 +861,7 @@ class Spacebot:
             actlaunches += 1
             fullmessage += "Vehicle: __**{0[0]}**__| Payload: __**{0[1]}**__".format(launch["name"].split('|'))
 
-            window_start = datetime.fromisoformat(launch["wsstamp"])
+            window_start = datetime.fromtimestamp(launch["wsstamp"])
 
             # If the launch was not assigned an accurate date yet, display the month only.
             if launch["status"] == 2:
@@ -871,6 +874,9 @@ class Spacebot:
         em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
         em.set_author(name="Next {} spacecraft launches:".format(actlaunches),
                       icon_url=LAUNCH_LOGO)
+
+        em.set_footer(text="Retrieved from launchlibrary.net at {}"
+                      .format(datetime.fromtimestamp(self.last_fetch).strftime("%H:%M UTC")))
         await self.bot.say(embed=em)
 
     @commands.command(pass_context=True, aliases=['elonquote', 'eq'])
