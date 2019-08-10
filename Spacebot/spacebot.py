@@ -807,7 +807,7 @@ class Spacebot:
 
         fullmessage = "Vehicle: __**{0[0]}**__| Payload: __**{0[1]}**__".format(nldata["name"].split('|'))
 
-        ws = datetime.fromtimestamp(nldata["wsstamp"]).strftime("%m %d, %H:%M UTC")
+        ws = datetime.fromtimestamp(nldata["wsstamp"]).strftime(LAUNCH_TIME_FORMAT)
 
         fullmessage += " | Time: __**{}**__\n".format(ws)
 
@@ -836,7 +836,7 @@ class Spacebot:
 
         em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
         em.set_author(name="Next launch:",
-                      icon_url="https://images-ext-1.discordapp.net/eyJ1cmwiOiJodHRwOi8vaS5pbWd1ci5jb20vVk1kRGo2Yy5wbmcifQ.CmIVz3NKC91ria81ae45bo4yEiA")
+                      icon_url=LAUNCH_LOGO)
         await self.bot.send_message(ctx.message.channel, embed=em)
 
     @commands.command(aliases=['ll', 'launchlist'])
@@ -851,27 +851,26 @@ class Spacebot:
 
         fullmessage = ""
         actlaunches = 0
+        launches_go = list(sorted(filter(lambda x: x["status"] == 1, launch_info), key=lambda x: x["wsstamp"]))
+        launches_tbd = list(sorted(filter(lambda x: x["status"] == 2, launch_info), key=lambda x:x ["wsstamp"]))
+        launch_info = launches_go + launches_tbd
         for launch in launch_info:
-            if launch["status"] != 1 and actlaunches == 0:
-                continue
-
             actlaunches += 1
             fullmessage += "Vehicle: __**{0[0]}**__| Payload: __**{0[1]}**__".format(launch["name"].split('|'))
 
-            ws = launch["windowstart"][:-7]
+            window_start = datetime.fromisoformat(launch["wsstamp"])
+
             # If the launch was not assigned an accurate date yet, display the month only.
             if launch["status"] == 2:
-                ws = ws[0:ws.index(' ')] + " - Day TBD"
+                ws = launch["windowstart"][0:launch["windowstart"].index(' ')] + " - Day TBD"
             else:
-                # ws now: December 30, 2017 00:00
-                ws = ws[0:ws.index(',') + 2] + ws[-5:] + " UTC"
-                # ws now: December 30, 00:00 UTC
+                ws = window_start.strftime(LAUNCH_TIME_FORMAT)
 
             fullmessage += " | Time: {}\n".format(ws)
 
         em = discord.Embed(description=fullmessage, color=discord.Color.dark_blue())
         em.set_author(name="Next {} spacecraft launches:".format(actlaunches),
-                      icon_url="https://images-ext-1.discordapp.net/eyJ1cmwiOiJodHRwOi8vaS5pbWd1ci5jb20vVk1kRGo2Yy5wbmcifQ.CmIVz3NKC91ria81ae45bo4yEiA")
+                      icon_url=LAUNCH_LOGO)
         await self.bot.say(embed=em)
 
     @commands.command(pass_context=True, aliases=['elonquote', 'eq'])

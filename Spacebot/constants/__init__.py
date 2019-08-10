@@ -6,3 +6,5 @@ LAUNCH_LIBRARY_ERROR_MESSAGE = "❌ Unable to establish a link with launchlibrar
                                "if this issue persists, as this module is undergoing upgrades to alleviate " \
                                "this issue.**"
 
+LAUNCH_TIME_FORMAT = "%B %d, %H:%M UTC"
+LAUNCH_LOGO = "https://images-ext-1.discordapp.net/eyJ1cmwiOiJodHRwOi8vaS5pbWd1ci5jb20vVk1kRGo2Yy5wbmcifQ.CmIVz3NKC91ria81ae45bo4yEiA"
