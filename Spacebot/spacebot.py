@@ -790,7 +790,7 @@ class Spacebot:
 
         nldata = None
         for r in launch_info:
-            if r["wsstamp"] == 0:
+            if r["netstamp"] == 0:
                 continue
 
             if r["status"] == 1:
@@ -802,13 +802,13 @@ class Spacebot:
                 ":rocket: There are 0 listed launches with accurate dates. Check back soon :alarm_clock: !")
             return
 
-        time_to_launch = self.get_time_to(nldata["wsstamp"])
+        time_to_launch = self.get_time_to(nldata["netstamp"])
 
         fullmessage = "{0} **{1[0]}** | **{1[1]}**\n" \
             .format(ROCKET,
                     nldata["name"].split('|'))
 
-        windowstart = datetime.fromtimestamp(nldata["wsstamp"])
+        windowstart = datetime.fromtimestamp(nldata["netstamp"])
         ws = windowstart.strftime(NEXT_LAUNCH_TIME_FORMAT)
 
         try:
@@ -856,15 +856,15 @@ class Spacebot:
 
         messages = []
 
-        launches_go = list(sorted(filter(lambda x: x["status"] == 1, launch_info), key=lambda x: x["wsstamp"]))
-        launches_tbd = list(sorted(filter(lambda x: x["status"] == 2, launch_info), key=lambda x: x["wsstamp"]))
+        launches_go = list(sorted(filter(lambda x: x["status"] == 1, launch_info), key=lambda x: x["netstamp"]))
+        launches_tbd = list(sorted(filter(lambda x: x["status"] == 2, launch_info), key=lambda x: x["netstamp"]))
         launch_info = launches_go + launches_tbd
         for launch in launch_info:
             emoji = LAUNCH_EMOJI.get(launch["status"], DEFAULT_LAUNCH_EMOJI)
 
             fullmessage = "{0} **{1[0]}| {1[1]}**\n".format(emoji, launch["name"].split('|'))
 
-            window_start = datetime.fromtimestamp(launch["wsstamp"])
+            window_start = datetime.fromtimestamp(launch["netstamp"])
 
             # If the launch was not assigned an accurate date yet, display the month only.
             if launch["status"] == 2:
