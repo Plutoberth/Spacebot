@@ -62,5 +62,5 @@ Mod command. Have the bot ping unpingable roles, and then set them to unmentiona
 
 #### -A feature that will allow you to be @mentioned at any launch by chosen launch providers.
 
-#### -Send suggestions to Cakeofdestiny#2318 (on Discord)
+#### -Send suggestions to Cakeofdestiny (on Discord)
 
